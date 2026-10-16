@@ -3,560 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nos Besoins - Gestion Familiale Synchronisée</title>
-
-    <!-- PWA & Mobile Icons -->
-    <meta name="theme-color" content="#db2777">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Nos Besoins">
+    <title>Nos Besoins - Gestion Familiale</title>
     
     <!-- Scripts Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <style>
-        /* --- VARIABLES ET THÈMES --- */
         :root {
             --transition: all 0.3s ease;
             --radius: 12px;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
-
-        /* Thème Femme (Rose / Fuchsia) */
         [data-theme="femme"] {
             --primary: #db2777;
             --primary-light: #fce7f3;
             --primary-dark: #be185d;
-            --accent: #f43f5e;
             --bg: #fff1f2;
             --card-bg: #ffffff;
             --text: #1f2937;
             --text-light: #6b7280;
             --border: #fbcfe8;
             --success: #059669;
-            --warning: #d97706;
             --danger: #dc2626;
         }
-
-        /* Thème Mari (Bleu / Gris / Neutre) */
         [data-theme="mari"] {
             --primary: #2563eb;
             --primary-light: #eff6ff;
             --primary-dark: #1d4ed8;
-            --accent: #475569;
             --bg: #f8fafc;
             --card-bg: #ffffff;
             --text: #1e293b;
             --text-light: #64748b;
             --border: #cbd5e1;
             --success: #16a34a;
-            --warning: #ca8a04;
             --danger: #ef4444;
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            transition: var(--transition);
-        }
-
-        /* --- HEADER & NAVIGATION --- */
-        header {
-            background-color: var(--card-bg);
-            border-bottom: 2px solid var(--border);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: var(--shadow);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo-area {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .logo-icon {
-            background-color: var(--primary);
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            font-weight: bold;
-        }
-
-        .logo-area h1 {
-            font-size: 1.5rem;
-            color: var(--primary-dark);
-        }
-
-        .user-switcher {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            background: var(--bg);
-            padding: 0.5rem 1rem;
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-        }
-
-        .user-switcher select {
-            background: transparent;
-            border: none;
-            font-weight: 600;
-            color: var(--text);
-            font-size: 1rem;
-            cursor: pointer;
-            outline: none;
-        }
-
-        nav {
-            background-color: var(--card-bg);
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid var(--border);
-            overflow-x: auto;
-        }
-
-        .nav-btn {
-            background: none;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: var(--radius);
-            font-weight: 600;
-            color: var(--text-light);
-            cursor: pointer;
-            transition: var(--transition);
-            white-space: nowrap;
-        }
-
-        .nav-btn:hover {
-            background-color: var(--primary-light);
-            color: var(--primary);
-        }
-
-        .nav-btn.active {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        /* --- CONTENEUR PRINCIPAL --- */
-        main {
-            flex: 1;
-            max-width: 1200px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 2rem 1rem;
-        }
-
-        .view-section {
-            display: none;
-        }
-
-        .view-section.active {
-            display: block;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* --- CARTES & COMPOSANTS --- */
-        .card {
-            background-color: var(--card-bg);
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-            margin-bottom: 1.5rem;
-        }
-
-        .grid-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background-color: var(--card-bg);
-            border-left: 5px solid var(--primary);
-            padding: 1.25rem;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            border-top: 1px solid var(--border);
-            border-right: 1px solid var(--border);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .stat-card h3 {
-            font-size: 0.85rem;
-            color: var(--text-light);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-card .value {
-            font-size: 1.75rem;
-            font-weight: bold;
-            color: var(--text);
-        }
-
-        /* --- FORMULAIRES --- */
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.25rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .form-group.full-width {
-            grid-column: 1 / -1;
-        }
-
-        label {
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        input, select, textarea {
-            padding: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            font-size: 1rem;
-            background-color: var(--card-bg);
-            color: var(--text);
-            transition: var(--transition);
-        }
-
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-light);
-        }
-
-        /* --- BOUTONS --- */
-        .btn {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--radius);
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .btn:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background-color: var(--text-light);
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background-color: var(--text);
-        }
-
-        .btn-danger {
-            background-color: var(--danger);
-        }
-
-        .btn-danger:hover {
-            background-color: #b91c1c;
-        }
-
-        .btn-success {
-            background-color: var(--success);
-        }
-
-        .btn-success:hover {
-            background-color: #047857;
-        }
-
-        .btn-sm {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.85rem;
-        }
-
-        /* --- TABLEAUX & LISTES --- */
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            margin-top: 1rem;
-        }
-
-        th, td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        th {
-            background-color: var(--primary-light);
-            color: var(--primary-dark);
-            font-weight: 600;
-        }
-
-        tr:hover td {
-            background-color: rgba(0,0,0,0.01);
-        }
-
-        /* --- BADGES --- */
-        .badge {
-            padding: 0.35rem 0.75rem;
-            border-radius: 50px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            display: inline-block;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+        header { background-color: var(--card-bg); border-bottom: 2px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100; }
+        .logo-area { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon { background-color: var(--primary); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: bold; }
+        .logo-area h1 { font-size: 1.5rem; color: var(--primary-dark); }
+        .user-switcher { display: flex; align-items: center; gap: 1rem; background: var(--bg); padding: 0.5rem 1rem; border-radius: var(--radius); border: 1px solid var(--border); }
+        .user-switcher select { background: transparent; border: none; font-weight: 600; color: var(--text); font-size: 1rem; cursor: pointer; outline: none; }
+        nav { background-color: var(--card-bg); display: flex; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); overflow-x: auto; }
+        .nav-btn { background: none; border: none; padding: 0.5rem 1rem; border-radius: var(--radius); font-weight: 600; color: var(--text-light); cursor: pointer; transition: var(--transition); white-space: nowrap; }
+        .nav-btn:hover { background-color: var(--primary-light); color: var(--primary); }
+        .nav-btn.active { background-color: var(--primary); color: white; }
+        main { flex: 1; max-width: 1200px; width: 100%; margin: 0 auto; padding: 2rem 1rem; }
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+        .card { background-color: var(--card-bg); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 1.5rem; }
+        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background-color: var(--card-bg); border-left: 5px solid var(--primary); padding: 1.25rem; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); }
+        .stat-card h3 { font-size: 0.85rem; color: var(--text-light); text-transform: uppercase; margin-bottom: 0.5rem; }
+        .stat-card .value { font-size: 1.75rem; font-weight: bold; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        label { font-weight: 600; font-size: 0.9rem; }
+        input, select, textarea { padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 1rem; background-color: var(--card-bg); color: var(--text); }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+        .btn { background-color: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: var(--radius); font-weight: 600; cursor: pointer; transition: var(--transition); display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn:hover { background-color: var(--primary-dark); }
+        .btn-secondary { background-color: var(--text-light); color: white; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 1rem; }
+        th, td { padding: 1rem; border-bottom: 1px solid var(--border); }
+        th { background-color: var(--primary-light); color: var(--primary-dark); font-weight: 600; }
+        .badge { padding: 0.35rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: bold; display: inline-block; }
         .badge-pending { background-color: #fef3c7; color: #b45309; }
         .badge-purchased { background-color: #d1fae5; color: #065f46; }
         .badge-cancelled { background-color: #fee2e2; color: #991b1b; }
-
         .badge-priority-haute { background-color: #fee2e2; color: #991b1b; }
         .badge-priority-moyenne { background-color: #fef3c7; color: #b45309; }
         .badge-priority-basse { background-color: #e0f2fe; color: #0369a1; }
-
-        .badge-creator {
-            background-color: var(--primary-light);
-            color: var(--primary-dark);
-            border: 1px solid var(--border);
-        }
-
-        .badge-category {
-            background-color: #f3f4f6;
-            color: #374151;
-            border: 1px solid #d1d5db;
-            font-size: 0.75rem;
-        }
-
-        /* --- FILTRES & RECHERCHE --- */
-        .filters-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .filters-group {
-            display: flex;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        /* --- MODAL --- */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            pointer-events: none;
-            transition: var(--transition);
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .modal {
-            background-color: var(--card-bg);
-            border-radius: var(--radius);
-            padding: 2rem;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            transform: scale(0.95);
-            transition: var(--transition);
-        }
-
-        .modal-overlay.active .modal {
-            transform: scale(1);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--text-light);
-        }
-
-        /* --- NOTIFICATIONS TOAST --- */
-        #toast-container {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 1100;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .toast {
-            background-color: var(--card-bg);
-            color: var(--text);
-            padding: 1rem 1.5rem;
-            border-radius: var(--radius);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            border-left: 5px solid var(--primary);
-            animation: slideIn 0.3s ease;
-            font-weight: 600;
-        }
-
-        .toast.success { border-left-color: var(--success); }
-        .toast.error { border-left-color: var(--danger); }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .sync-banner {
-            background-color: #fef3c7;
-            color: #b45309;
-            padding: 0.5rem 1rem;
-            text-align: center;
-            font-size: 0.85rem;
-            font-weight: bold;
-            border-bottom: 1px solid var(--border);
-        }
-
-        @media(max-width: 768px) {
-            header {
-                flex-direction: column;
-                gap: 1rem;
-                padding: 1rem;
-            }
-            .filters-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .filters-group {
-                flex-direction: column;
-                align-items: stretch;
-            }
-        }
+        .badge-creator { background-color: var(--primary-light); color: var(--primary-dark); border: 1px solid var(--border); }
+        .badge-category { background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        .filters-bar { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; align-items: center; justify-content: space-between; }
+        .filters-group { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: var(--transition); }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal { background-color: var(--card-bg); border-radius: var(--radius); padding: 2rem; width: 100%; max-width: 500px; box-shadow: var(--shadow); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light); }
+        #toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 1100; display: flex; flex-direction: column; gap: 0.75rem; }
+        .toast { background-color: var(--card-bg); color: var(--text); padding: 1rem 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow); border-left: 5px solid var(--primary); font-weight: 600; }
+        .sync-banner { background-color: #fef3c7; color: #b45309; padding: 0.5rem 1rem; text-align: center; font-size: 0.85rem; font-weight: bold; border-bottom: 1px solid var(--border); }
     </style>
 </head>
 <body data-theme="femme">
 
-    <!-- BANNER SYNCHRONISATION -->
-    <div class="sync-banner" id="syncBanner">
-        🔄 Mode Local. Configurez Firebase dans l'onglet "Données & Synchronisation" pour lier vos téléphones.
-    </div>
+    <div class="sync-banner" id="syncBanner">🔄 Mode Local. Configurez Firebase dans l'onglet "Données & Synchronisation".</div>
 
-    <!-- HEADER -->
     <header>
         <div class="logo-area">
             <div class="logo-icon">NB</div>
             <h1>Nos Besoins</h1>
         </div>
         <div class="user-switcher">
-            <label for="profileSelect">Mode Actuel :</label>
+            <label for="profileSelect">Mode :</label>
             <select id="profileSelect" onchange="switchProfile(this.value)">
-                <option value="Femme">👩 Mode Femme</option>
-                <option value="Mari">👨 Mode Mari</option>
+                <option value="Femme">👩 Femme</option>
+                <option value="Mari">👨 Mari</option>
             </select>
         </div>
     </header>
 
-    <!-- NAVIGATION -->
     <nav>
         <button class="nav-btn active" onclick="switchView('dashboard', this)">Tableau de bord</button>
         <button class="nav-btn" onclick="switchView('requests', this)">Liste des demandes</button>
-        <button class="nav-btn" onclick="switchView('form-view', this)" id="navAddBtn">Ajouter un besoin</button>
+        <button class="nav-btn" onclick="switchView('form-view', this)">Ajouter un besoin</button>
         <button class="nav-btn" onclick="switchView('budget', this)">Gestion du budget</button>
         <button class="nav-btn" onclick="switchView('data-view', this)">Données & Synchronisation</button>
     </nav>
 
-    <!-- CONTENU PRINCIPAL -->
     <main>
-
-        <!-- 1. TABLEAU DE BORD -->
+        <!-- TABLEAU DE BORD -->
         <section id="dashboard" class="view-section active">
             <div class="grid-stats">
-                <div class="stat-card">
-                    <h3>Budget Mensuel Global</h3>
-                    <div class="value" id="stat-budget">0 DZD</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Total Estimé (Panier)</h3>
-                    <div class="value" id="stat-estimated">0 DZD</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Total Réel Dépensé</h3>
-                    <div class="value" id="stat-actual">0 DZD</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Demandes en attente</h3>
-                    <div class="value" id="stat-pending">0</div>
-                </div>
+                <div class="stat-card"><h3>Budget Global</h3><div class="value" id="stat-budget">0 DZD</div></div>
+                <div class="stat-card"><h3>Panier Estimé</h3><div class="value" id="stat-estimated">0 DZD</div></div>
+                <div class="stat-card"><h3>Total Réel Dépensé</h3><div class="value" id="stat-actual">0 DZD</div></div>
+                <div class="stat-card"><h3>En attente</h3><div class="value" id="stat-pending">0</div></div>
             </div>
-
             <div class="card">
                 <h2>Aperçu rapide & Activité récente</h2>
-                <!-- FILTRES POUR LE TABLEAU DE BORD -->
                 <div class="filters-bar" style="margin-top: 1rem;">
                     <div class="filters-group">
                         <input type="text" id="dashSearchInput" placeholder="Rechercher..." oninput="renderDashboard()">
@@ -579,17 +155,10 @@
                             <option value="Fournitures scolaires">Fournitures scolaires</option>
                             <option value="Autres besoins du foyer">Autres besoins</option>
                         </select>
-                        <select id="dashFilterPriority" onchange="renderDashboard()">
-                            <option value="">Toutes priorités</option>
-                            <option value="Haute">Haute</option>
-                            <option value="Moyenne">Moyenne</option>
-                            <option value="Basse">Basse</option>
-                        </select>
                     </div>
                 </div>
-
                 <div class="table-responsive">
-                    <table id="recent-table">
+                    <table>
                         <thead>
                             <tr>
                                 <th>Produit</th>
@@ -600,21 +169,19 @@
                                 <th>Statut</th>
                             </tr>
                         </thead>
-                        <tbody id="recent-tbody">
-                            <!-- Rempli par JS -->
-                        </tbody>
+                        <tbody id="recent-tbody"></tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- 2. LISTE DES DEMANDES -->
+        <!-- LISTE DES DEMANDES -->
         <section id="requests" class="view-section">
             <div class="card">
                 <h2>Liste complète des demandes</h2>
                 <div class="filters-bar" style="margin-top: 1rem;">
                     <div class="filters-group">
-                        <input type="text" id="searchInput" placeholder="Rechercher un produit..." oninput="renderRequests()">
+                        <input type="text" id="searchInput" placeholder="Rechercher..." oninput="renderRequests()">
                         <select id="filterStatus" onchange="renderRequests()">
                             <option value="">Tous les statuts</option>
                             <option value="en attente">En attente</option>
@@ -634,19 +201,8 @@
                             <option value="Fournitures scolaires">Fournitures scolaires</option>
                             <option value="Autres besoins du foyer">Autres besoins</option>
                         </select>
-                        <select id="filterPriority" onchange="renderRequests()">
-                            <option value="">Toutes priorités</option>
-                            <option value="Haute">Haute</option>
-                            <option value="Moyenne">Moyenne</option>
-                            <option value="Basse">Basse</option>
-                        </select>
-                        <select id="filterCreator" onchange="renderRequests()">
-                            <option value="">Tous les créateurs</option>
-                            <option value="Femme">Femme</option>
-                            <option value="Mari">Mari</option>
-                        </select>
                     </div>
-                    <button class="btn btn-sm" onclick="switchView('form-view', document.querySelector('nav button:nth-child(3)'))">+ Nouveau besoin</button>
+                    <button class="btn btn-sm" onclick="switchView('form-view', document.querySelector('nav button:nth-child(3)'))">+ Nouveau</button>
                 </div>
                 <div class="table-responsive">
                     <table>
@@ -661,15 +217,13 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="requests-tbody">
-                            <!-- Rempli par JS -->
-                        </tbody>
+                        <tbody id="requests-tbody"></tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- 3. FORMULAIRE D'AJOUT / MODIFICATION -->
+        <!-- FORMULAIRES -->
         <section id="form-view" class="view-section">
             <div class="card">
                 <h2 id="form-title">Ajouter un nouveau besoin</h2>
@@ -677,11 +231,9 @@
                     <input type="hidden" id="editId">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="productName">Nom du produit / besoin *</label>
-                            <input type="text" id="productName" list="suggestionsList" required placeholder="Ex: Lait, Lessive, etc.">
-                            <datalist id="suggestionsList">
-                                <!-- Suggestions dynamiques -->
-                            </datalist>
+                            <label for="productName">Nom du produit *</label>
+                            <input type="text" id="productName" list="suggestionsList" required placeholder="Ex: Lait">
+                            <datalist id="suggestionsList"></datalist>
                         </div>
                         <div class="form-group">
                             <label for="category">Catégorie</label>
@@ -699,7 +251,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="quantity">Quantité prévue *</label>
+                            <label for="quantity">Quantité *</label>
                             <input type="number" id="quantity" min="1" value="1" required oninput="calculateEstimatedTotal()">
                         </div>
                         <div class="form-group">
@@ -707,7 +259,7 @@
                             <input type="number" id="unitPrice" min="0" step="0.01" required oninput="calculateEstimatedTotal()" placeholder="0.00">
                         </div>
                         <div class="form-group">
-                            <label for="totalEstimatedDisplay">Total estimé (DZD)</label>
+                            <label for="totalEstimatedDisplay">Total estimé</label>
                             <input type="text" id="totalEstimatedDisplay" readonly value="0.00 DZD" style="background-color: var(--primary-light); font-weight: bold;">
                         </div>
                         <div class="form-group">
@@ -719,202 +271,139 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="desiredDate">Date souhaitée d'achat</label>
+                            <label for="desiredDate">Date souhaitée</label>
                             <input type="date" id="desiredDate">
                         </div>
                         <div class="form-group full-width">
-                            <label for="description">Description facultative</label>
-                            <textarea id="description" rows="3" placeholder="Précisions sur la marque, le modèle, le magasin..."></textarea>
+                            <label for="description">Description</label>
+                            <textarea id="description" rows="3"></textarea>
                         </div>
                     </div>
                     <div style="display: flex; gap: 1rem; justify-content: flex-end;">
                         <button type="button" class="btn btn-secondary" onclick="switchView('requests', document.querySelector('nav button:nth-child(2)'))">Annuler</button>
-                        <button type="submit" class="btn" id="submitFormBtn">Enregistrer le besoin</button>
+                        <button type="submit" class="btn" id="submitFormBtn">Enregistrer</button>
                     </div>
                 </form>
             </div>
         </section>
 
-        <!-- 4. GESTION DU BUDGET -->
+        <!-- BUDGET -->
         <section id="budget" class="view-section">
             <div class="card">
                 <h2>Configuration du Budget</h2>
                 <form id="budgetForm" onsubmit="saveBudget(event)" style="margin-top: 1.5rem; max-width: 400px;">
                     <div class="form-group" style="margin-bottom: 1rem;">
-                        <label for="monthlyBudgetInput">Montant du budget mensuel global (DZD)</label>
-                        <input type="number" id="monthlyBudgetInput" min="0" step="1" required placeholder="Ex: 80000">
+                        <label for="monthlyBudgetInput">Budget mensuel global (DZD)</label>
+                        <input type="number" id="monthlyBudgetInput" min="0" required>
                     </div>
-                    <button type="submit" class="btn">Mettre à jour le budget</button>
+                    <button type="submit" class="btn">Mettre à jour</button>
                 </form>
             </div>
-            
             <div class="card">
-                <h2>Synthèse financière globale</h2>
+                <h2>Synthèse financière</h2>
                 <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
                     <div><strong>Budget défini :</strong> <span id="summaryBudget">0</span> DZD</div>
                     <div><strong>Total Réel Dépensé :</strong> <span id="summaryActual">0</span> DZD</div>
                     <div><strong>Reste disponible :</strong> <span id="summaryRemaining" style="font-weight: bold;">0</span> DZD</div>
                 </div>
             </div>
-
-            <!-- DÉTAILS DU BUDGET PAR CATÉGORIE -->
             <div class="card">
-                <h2>Répartition du Budget par Catégorie</h2>
-                <p style="margin-top: 0.5rem; color: var(--text-light);">Détails des dépenses estimées (en attente) et réellement effectuées par catégorie de produits.</p>
+                <h2>Répartition par Catégorie</h2>
                 <div class="table-responsive">
                     <table>
                         <thead>
-                            <tr>
-                                <th>Catégorie</th>
-                                <th>Articles</th>
-                                <th>Total Estimé (DZD)</th>
-                                <th>Total Réel Payé (DZD)</th>
-                            </tr>
+                            <tr><th>Catégorie</th><th>Articles</th><th>Total Estimé</th><th>Total Réel</th></tr>
                         </thead>
-                        <tbody id="category-budget-tbody">
-                            <!-- Rempli par JS -->
-                        </tbody>
+                        <tbody id="category-budget-tbody"></tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- 5. GESTION DES DONNÉES & SYNCHRONISATION -->
+        <!-- DONNÉES & SYNCHRONISATION -->
         <section id="data-view" class="view-section">
             <div class="card">
-                <h2>📱 Synchronisation 2 Téléphones (Firebase)</h2>
-                <p style="margin: 0.5rem 0 1rem 0; color: var(--text-light);">
-                    Collez votre configuration Firebase JSON ci-dessous pour connecter les téléphones du foyer en temps réel.
-                </p>
+                <h2>📱 Synchronisation Firebase</h2>
                 <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="firebaseConfigInput">Configuration Firebase (JSON)</label>
-                    <textarea id="firebaseConfigInput" rows="6" placeholder='{"apiKey": "...", "databaseURL": "...", "projectId": "..."}'></textarea>
+                    <label for="firebaseConfigInput">Configuration JSON</label>
+                    <textarea id="firebaseConfigInput" rows="5" placeholder='{"apiKey": "...", "databaseURL": "...", "projectId": "..."}'></textarea>
                 </div>
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                    <button class="btn" onclick="setupFirebase()">Connecter la synchronisation</button>
-                    <button class="btn btn-secondary" onclick="requestNotificationPermission()">🔔 Activer les notifications</button>
+                    <button class="btn" onclick="setupFirebase()">Connecter</button>
+                    <button class="btn btn-secondary" onclick="requestNotificationPermission()">🔔 Activer Notifications</button>
                 </div>
             </div>
-
             <div class="card">
-                <h2>Exportation et Importation manuelle</h2>
-                <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
-                    <button class="btn" onclick="exportData()">📥 Exporter les données (JSON)</button>
-                    <label class="btn btn-secondary" style="cursor: pointer; margin: 0;">
-                        📤 Importer des données <input type="file" id="importFile" accept=".json" onchange="importData(event)" style="display: none;">
-                    </label>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2>Zone de danger</h2>
-                <button class="btn btn-danger" onclick="confirmResetData()">Réinitialiser toutes les données</button>
+                <h2>Sauvegarde</h2>
+                <button class="btn" onclick="exportData()">📥 Exporter JSON</button>
+                <button class="btn btn-danger" onclick="confirmResetData()">Réinitialiser</button>
             </div>
         </section>
-
     </main>
 
-    <!-- MODALE SAISIE PRIX RÉEL (ACHAT / CORRECTION) -->
+    <!-- MODAL PRIX -->
     <div class="modal-overlay" id="priceModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 id="modalTitle">Validation de l'achat & Saisie du prix</h3>
+                <h3 id="modalTitle">Validation de l'achat</h3>
                 <button class="modal-close" onclick="closePriceModal()">&times;</button>
             </div>
             <form id="priceCorrectionForm" onsubmit="savePriceCorrection(event)">
                 <input type="hidden" id="correctId">
                 <div class="form-group" style="margin-bottom: 1rem;">
-                    <label id="modalProductName" style="font-size: 1.1rem; color: var(--primary); margin-bottom: 0.5rem; display:block;"></label>
+                    <label id="modalProductName" style="color: var(--primary); font-weight: bold;"></label>
                 </div>
                 <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="correctActualQty">Quantité réellement achetée</label>
+                    <label for="correctActualQty">Quantité réelle</label>
                     <input type="number" id="correctActualQty" min="1" required oninput="calculateModalTotal()">
                 </div>
                 <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="correctActualPrice">Prix unitaire réellement payé (DZD)</label>
-                    <input type="number" id="correctActualPrice" min="0" step="0.01" required oninput="calculateModalTotal()" placeholder="0.00">
+                    <label for="correctActualPrice">Prix unitaire payé (DZD)</label>
+                    <input type="number" id="correctActualPrice" min="0" step="0.01" required oninput="calculateModalTotal()">
                 </div>
                 <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label>Total réel calculé : <span id="modalTotalCalculated" style="font-weight: bold;">0.00 DZD</span></label>
+                    <label>Total réel : <span id="modalTotalCalculated" style="font-weight: bold;">0.00 DZD</span></label>
                 </div>
                 <div style="display: flex; gap: 1rem; justify-content: flex-end;">
                     <button type="button" class="btn btn-secondary" onclick="closePriceModal()">Annuler</button>
-                    <button type="submit" class="btn btn-success" id="modalSubmitBtn">Valider l'achat</button>
+                    <button type="submit" class="btn btn-success" id="modalSubmitBtn">Valider</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- TOAST NOTIFICATIONS -->
     <div id="toast-container"></div>
 
-    <!-- CODE JAVASCRIPT -->
     <script>
-        let state = {
-            currentUser: 'Femme',
-            monthlyBudget: 80000,
-            requests: []
-        };
-
+        let state = { currentUser: 'Femme', monthlyBudget: 80000, requests: [] };
         let dbRef = null;
         let isFirebaseActive = false;
 
         const DEFAULT_CATEGORIES = [
-            "Produits alimentaires",
-            "Produits d'hygiène",
-            "Produits ménagers",
-            "Vêtements et chaussures",
-            "Produits pour bébé",
-            "Santé",
-            "Électroménager",
-            "Mobilier",
-            "Fournitures scolaires",
-            "Autres besoins du foyer"
+            "Produits alimentaires", "Produits d'hygiène", "Produits ménagers",
+            "Vêtements et chaussures", "Produits pour bébé", "Santé",
+            "Électroménager", "Mobilier", "Fournitures scolaires", "Autres besoins du foyer"
         ];
-
-        const DEFAULT_SUGGESTIONS = [
-            "Lait", "Pain", "Œufs", "Sucre", "Café", "Huile", "Farine", "Pâtes", "Riz", "Tomates",
-            "Savon", "Dentifrice", "Shampooing", "Papier toilette", "Lessive", "Liquide vaisselle",
-            "Javel", "Sacs poubelle", "Couches bébé", "Lait bébé", "Paracétamol", "Eau minérale"
-        ];
+        const DEFAULT_SUGGESTIONS = ["Lait", "Pain", "Œufs", "Sucre", "Café", "Huile", "Farine", "Pâtes", "Riz", "Savon", "Dentifrice", "Lessive"];
 
         window.addEventListener('DOMContentLoaded', () => {
             loadFromLocalStorage();
             initFirebaseIfAvailable();
             initTheme();
             renderAll();
-            requestNotificationPermission();
         });
 
         function loadFromLocalStorage() {
-            const savedState = localStorage.getItem('nos_besoins_state');
-            if (savedState) {
-                try {
-                    state = JSON.parse(savedState);
-                } catch (e) {
-                    console.error("Erreur de chargement du localStorage", e);
-                }
+            const saved = localStorage.getItem('nos_besoins_state');
+            if (saved) {
+                try { state = JSON.parse(saved); } catch (e) { console.error(e); }
             } else {
-                state.requests = [
-                    {
-                        id: 'req-1',
-                        productName: 'Lait demi-écrémé (Pack)',
-                        category: 'Produits alimentaires',
-                        quantity: 2,
-                        unitPrice: 750,
-                        totalEstimated: 1500,
-                        priority: 'Haute',
-                        desiredDate: '2026-10-20',
-                        description: 'Marque Candia de préférence',
-                        creator: 'Femme',
-                        status: 'en attente',
-                        actualUnitPrice: 0,
-                        actualQty: 0,
-                        actualTotal: 0,
-                        purchaseDate: null,
-                        purchaseComment: ''
-                    }
-                ];
+                state.requests = [{
+                    id: 'req-1', productName: 'Lait', category: 'Produits alimentaires',
+                    quantity: 2, unitPrice: 750, totalEstimated: 1500, priority: 'Haute',
+                    desiredDate: '2026-10-20', description: '', creator: 'Femme',
+                    status: 'en attente', actualUnitPrice: 0, actualQty: 0, actualTotal: 0, purchaseDate: null
+                }];
                 saveToLocalStorage();
             }
             document.getElementById('profileSelect').value = state.currentUser;
@@ -923,9 +412,7 @@
 
         function saveToLocalStorage() {
             localStorage.setItem('nos_besoins_state', JSON.stringify(state));
-            if (isFirebaseActive && dbRef) {
-                dbRef.set(state);
-            }
+            if (isFirebaseActive && dbRef) dbRef.set(state);
         }
 
         function initFirebaseIfAvailable() {
@@ -933,41 +420,21 @@
             if (configStr) {
                 try {
                     const config = JSON.parse(configStr);
-                    if (!firebase.apps.length) {
-                        firebase.initializeApp(config);
-                    }
+                    if (!firebase.apps.length) firebase.initializeApp(config);
                     dbRef = firebase.database().ref('nos_besoins_data');
                     isFirebaseActive = true;
-
-                    const banner = document.getElementById('syncBanner');
-                    banner.innerText = "🟢 Synchronisation en temps réel activée sur les 2 téléphones !";
-                    banner.style.backgroundColor = "var(--primary-light)";
-                    banner.style.color = "var(--primary-dark)";
-
-                    let initialLoad = true;
+                    document.getElementById('syncBanner').innerText = "🟢 Synchronisation en temps réel activée !";
                     dbRef.on('value', (snapshot) => {
-                        const remoteData = snapshot.val();
-                        if (remoteData) {
-                            if (!initialLoad && remoteData.requests && remoteData.requests.length > state.requests.length) {
-                                const newReq = remoteData.requests[0];
-                                if (newReq.creator !== state.currentUser) {
-                                    sendPushNotification("Nouveau besoin ajouté !", `${newReq.creator} a ajouté : ${newReq.productName}`);
-                                }
-                            }
-
-                            const currentUserBackup = state.currentUser;
-                            state = remoteData;
-                            state.currentUser = currentUserBackup;
-
+                        const remote = snapshot.val();
+                        if (remote) {
+                            const user = state.currentUser;
+                            state = remote;
+                            state.currentUser = user;
                             localStorage.setItem('nos_besoins_state', JSON.stringify(state));
                             renderAll();
                         }
-                        initialLoad = false;
                     });
-
-                } catch (err) {
-                    console.error("Erreur Firebase", err);
-                }
+                } catch (e) { console.error(e); }
             }
         }
 
@@ -977,30 +444,13 @@
             try {
                 JSON.parse(input);
                 localStorage.setItem('nos_besoins_firebase_config', input);
-                showToast('Configuration enregistrée ! Redémarrage...', 'success');
+                showToast('Enregistré ! Rechargement...', 'success');
                 setTimeout(() => location.reload(), 1000);
-            } catch (e) {
-                showToast('Format JSON invalide.', 'error');
-            }
+            } catch (e) { showToast('JSON invalide', 'error'); }
         }
 
         function requestNotificationPermission() {
-            if ("Notification" in window) {
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        showToast('Notifications activées !', 'success');
-                    }
-                });
-            }
-        }
-
-        function sendPushNotification(title, body) {
-            if ("Notification" in window && Notification.permission === "granted") {
-                new Notification(title, {
-                    body: body,
-                    icon: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-                });
-            }
+            if ("Notification" in window) Notification.requestPermission().then(p => { if (p === "granted") showToast('Notifications activées'); });
         }
 
         function switchProfile(profile) {
@@ -1008,21 +458,18 @@
             initTheme();
             saveToLocalStorage();
             renderAll();
-            showToast(`Mode basculé sur : ${profile}`, 'success');
+            showToast(`Mode : ${profile}`);
         }
 
         function initTheme() {
-            const theme = state.currentUser === 'Mari' ? 'mari' : 'femme';
-            document.body.setAttribute('data-theme', theme);
+            document.body.setAttribute('data-theme', state.currentUser === 'Mari' ? 'mari' : 'femme');
         }
 
-        function switchView(viewId, btnElement) {
-            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
-            document.querySelectorAll('nav .nav-btn').forEach(btn => btn.classList.remove('active'));
-
+        function switchView(viewId, btn) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('nav .nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
-            if (btnElement) btnElement.classList.add('active');
-
+            if (btn) btn.classList.add('active');
             if (viewId === 'requests') renderRequests();
             if (viewId === 'dashboard') renderDashboard();
             if (viewId === 'budget') renderBudgetSummary();
@@ -1032,25 +479,18 @@
         function calculateEstimatedTotal() {
             const qty = parseFloat(document.getElementById('quantity').value) || 0;
             const price = parseFloat(document.getElementById('unitPrice').value) || 0;
-            const total = qty * price;
-            document.getElementById('totalEstimatedDisplay').value = total.toLocaleString('fr-FR') + ' DZD';
+            document.getElementById('totalEstimatedDisplay').value = (qty * price).toLocaleString('fr-FR') + ' DZD';
         }
 
         function updateSuggestionsDatalist() {
             const datalist = document.getElementById('suggestionsList');
             datalist.innerHTML = '';
-            const userProducts = state.requests.map(r => r.productName);
-            const allSuggestions = Array.from(new Set([...DEFAULT_SUGGESTIONS, ...userProducts]));
-
-            allSuggestions.forEach(item => {
-                const opt = document.createElement('option');
-                opt.value = item;
-                datalist.appendChild(opt);
-            });
+            const all = Array.from(new Set([...DEFAULT_SUGGESTIONS, ...state.requests.map(r => r.productName)]));
+            all.forEach(i => { const opt = document.createElement('option'); opt.value = i; datalist.appendChild(opt); });
         }
 
-        function handleFormSubmit(event) {
-            event.preventDefault();
+        function handleFormSubmit(e) {
+            e.preventDefault();
             const editId = document.getElementById('editId').value;
             const productName = document.getElementById('productName').value.trim();
             const category = document.getElementById('category').value;
@@ -1059,75 +499,45 @@
             const priority = document.getElementById('priority').value;
             const desiredDate = document.getElementById('desiredDate').value;
             const description = document.getElementById('description').value.trim();
-
             const totalEstimated = quantity * unitPrice;
 
             if (editId) {
-                // Modification de l'existant
                 const req = state.requests.find(r => r.id === editId);
                 if (req) {
-                    req.productName = productName;
-                    req.category = category;
-                    req.quantity = quantity;
-                    req.unitPrice = unitPrice;
-                    req.totalEstimated = totalEstimated;
-                    req.priority = priority;
-                    req.desiredDate = desiredDate;
-                    req.description = description;
-                    showToast('Besoin mis à jour !', 'success');
+                    req.productName = productName; req.category = category; req.quantity = quantity;
+                    req.unitPrice = unitPrice; req.totalEstimated = totalEstimated; req.priority = priority;
+                    req.desiredDate = desiredDate; req.description = description;
+                    showToast('Besoin mis à jour');
                 }
             } else {
-                // Création d'un nouveau besoin
-                const newReq = {
-                    id: 'req-' + Date.now(),
-                    productName,
-                    category,
-                    quantity,
-                    unitPrice,
-                    totalEstimated,
-                    priority,
-                    desiredDate,
-                    description,
-                    creator: state.currentUser,
-                    status: 'en attente',
-                    actualUnitPrice: 0,
-                    actualQty: 0,
-                    actualTotal: 0,
-                    purchaseDate: null,
-                    purchaseComment: ''
-                };
-                state.requests.unshift(newReq);
-                showToast('Nouveau besoin ajouté !', 'success');
+                state.requests.unshift({
+                    id: 'req-' + Date.now(), productName, category, quantity, unitPrice,
+                    totalEstimated, priority, desiredDate, description, creator: state.currentUser,
+                    status: 'en attente', actualUnitPrice: 0, actualQty: 0, actualTotal: 0, purchaseDate: null
+                });
+                showToast('Besoin ajouté');
             }
-
             saveToLocalStorage();
             resetForm();
             switchView('requests', document.querySelector('nav button:nth-child(2)'));
         }
 
-        // --- CORRECTION 1 : REMPLISSAGE DES INFOS PRÉCÉDENTES LORS DE LA MODIFICATION ---
         function editRequest(id) {
             const req = state.requests.find(r => r.id === id);
             if (!req) return;
-
             if (req.status === 'acheté' && state.currentUser !== 'Mari') {
-                showToast('Impossible de modifier un besoin déjà acheté.', 'error');
-                return;
+                showToast('Impossible de modifier un besoin déjà acheté', 'error'); return;
             }
-
-            // Charger les informations existantes dans le formulaire
             document.getElementById('editId').value = req.id;
-            document.getElementById('productName').value = req.productName || '';
-            document.getElementById('category').value = req.category || 'Autres besoins du foyer';
-            document.getElementById('quantity').value = req.quantity || 1;
-            document.getElementById('unitPrice').value = req.unitPrice || 0;
-            document.getElementById('priority').value = req.priority || 'Moyenne';
+            document.getElementById('productName').value = req.productName;
+            document.getElementById('category').value = req.category;
+            document.getElementById('quantity').value = req.quantity;
+            document.getElementById('unitPrice').value = req.unitPrice;
+            document.getElementById('priority').value = req.priority;
             document.getElementById('desiredDate').value = req.desiredDate || '';
             document.getElementById('description').value = req.description || '';
-            
-            document.getElementById('form-title').innerText = 'Modifier le besoin : ' + req.productName;
-            document.getElementById('submitFormBtn').innerText = 'Mettre à jour le besoin';
-            
+            document.getElementById('form-title').innerText = 'Modifier le besoin';
+            document.getElementById('submitFormBtn').innerText = 'Mettre à jour';
             calculateEstimatedTotal();
             switchView('form-view', document.querySelector('nav button:nth-child(3)'));
         }
@@ -1136,121 +546,172 @@
             document.getElementById('editId').value = '';
             document.getElementById('needForm').reset();
             document.getElementById('form-title').innerText = 'Ajouter un nouveau besoin';
-            document.getElementById('submitFormBtn').innerText = 'Enregistrer le besoin';
+            document.getElementById('submitFormBtn').innerText = 'Enregistrer';
             document.getElementById('quantity').value = 1;
             calculateEstimatedTotal();
             updateSuggestionsDatalist();
         }
 
-        function markAsPurchased(id) {
-            openPriceModal(id, true);
-        }
-
+        function markAsPurchased(id) { openPriceModal(id, true); }
         function markAsCancelled(id) {
-            const req = state.requests.find(r => r.id === id);
-            if (!req) return;
-            req.status = 'annulé';
-            saveToLocalStorage();
-            renderAll();
-            showToast('Besoin annulé.', 'success');
+            const r = state.requests.find(x => x.id === id);
+            if (r) { r.status = 'annulé'; saveToLocalStorage(); renderAll(); showToast('Annulé'); }
         }
-
         function deleteRequest(id) {
-            if (!confirm('Voulez-vous vraiment supprimer ce besoin ?')) return;
-            state.requests = state.requests.filter(r => r.id !== id);
-            saveToLocalStorage();
-            renderAll();
-            showToast('Besoin supprimé.', 'success');
+            if (confirm('Supprimer ?')) { state.requests = state.requests.filter(x => x.id !== id); saveToLocalStorage(); renderAll(); showToast('Supprimé'); }
         }
 
-        function openPriceModal(id, isInitialPurchase = false) {
+        function openPriceModal(id, isInit) {
             const req = state.requests.find(r => r.id === id);
             if (!req) return;
-
             document.getElementById('correctId').value = req.id;
-            document.getElementById('modalProductName').innerText = `${req.productName} (Prix estimé: ${req.unitPrice} DZD)`;
+            document.getElementById('modalProductName').innerText = req.productName;
             document.getElementById('correctActualQty').value = req.actualQty || req.quantity;
             document.getElementById('correctActualPrice').value = req.actualUnitPrice || req.unitPrice;
-
-            if (isInitialPurchase) {
-                document.getElementById('modalTitle').innerText = "Validation de l'achat - Saisie du prix réel";
-                document.getElementById('modalSubmitBtn').innerText = "Valider l'achat";
-            } else {
-                document.getElementById('modalTitle').innerText = "Correction du prix réel";
-                document.getElementById('modalSubmitBtn').innerText = "Enregistrer la correction";
-            }
-
             calculateModalTotal();
             document.getElementById('priceModal').classList.add('active');
         }
-
-        function closePriceModal() {
-            document.getElementById('priceModal').classList.remove('active');
-        }
-
+        function closePriceModal() { document.getElementById('priceModal').classList.remove('active'); }
         function calculateModalTotal() {
-            const qty = parseFloat(document.getElementById('correctActualQty').value) || 0;
-            const price = parseFloat(document.getElementById('correctActualPrice').value) || 0;
-            const total = qty * price;
-            document.getElementById('modalTotalCalculated').innerText = total.toLocaleString('fr-FR') + ' DZD';
+            const q = parseFloat(document.getElementById('correctActualQty').value) || 0;
+            const p = parseFloat(document.getElementById('correctActualPrice').value) || 0;
+            document.getElementById('modalTotalCalculated').innerText = (q * p).toLocaleString('fr-FR') + ' DZD';
         }
-
-        function savePriceCorrection(event) {
-            event.preventDefault();
+        function savePriceCorrection(e) {
+            e.preventDefault();
             const id = document.getElementById('correctId').value;
             const req = state.requests.find(r => r.id === id);
             if (!req) return;
-
-            const actualQty = parseFloat(document.getElementById('correctActualQty').value);
-            const actualUnitPrice = parseFloat(document.getElementById('correctActualPrice').value);
-
-            req.status = 'acheté';
-            req.actualQty = actualQty;
-            req.actualUnitPrice = actualUnitPrice;
-            req.actualTotal = actualQty * actualUnitPrice;
-            if (!req.purchaseDate) {
-                req.purchaseDate = new Date().toISOString().split('T')[0];
-            }
-
-            saveToLocalStorage();
-            closePriceModal();
-            renderAll();
-            showToast('Achat et prix enregistrés avec succès !', 'success');
+            const q = parseFloat(document.getElementById('correctActualQty').value);
+            const p = parseFloat(document.getElementById('correctActualPrice').value);
+            req.status = 'acheté'; req.actualQty = q; req.actualUnitPrice = p; req.actualTotal = q * p;
+            if (!req.purchaseDate) req.purchaseDate = new Date().toISOString().split('T')[0];
+            saveToLocalStorage(); closePriceModal(); renderAll(); showToast('Achat enregistré');
         }
 
-        function saveBudget(event) {
-            event.preventDefault();
+        function saveBudget(e) {
+            e.preventDefault();
             const val = parseFloat(document.getElementById('monthlyBudgetInput').value);
-            if (isNaN(val) || val < 0) return;
-            state.monthlyBudget = val;
-            saveToLocalStorage();
-            renderBudgetSummary();
-            renderDashboard();
-            showToast('Budget mis à jour !', 'success');
+            if (!isNaN(val)) { state.monthlyBudget = val; saveToLocalStorage(); renderAll(); showToast('Budget mis à jour'); }
         }
 
-        // --- CORRECTION 3 : BUDGETS DÉTAILLÉS PAR CATÉGORIE ---
         function renderBudgetSummary() {
             document.getElementById('summaryBudget').innerText = state.monthlyBudget.toLocaleString('fr-FR');
-            const totalActual = state.requests
-                .filter(r => r.status === 'acheté')
-                .reduce((acc, r) => acc + (r.actualTotal || 0), 0);
-            
+            const totalActual = state.requests.filter(r => r.status === 'acheté').reduce((a, b) => a + (b.actualTotal || 0), 0);
             document.getElementById('summaryActual').innerText = totalActual.toLocaleString('fr-FR');
-            const remaining = state.monthlyBudget - totalActual;
+            const rem = state.monthlyBudget - totalActual;
             const remEl = document.getElementById('summaryRemaining');
-            remEl.innerText = remaining.toLocaleString('fr-FR') + ' DZD';
-            remEl.style.color = remaining < 0 ? 'var(--danger)' : 'var(--success)';
+            remEl.innerText = rem.toLocaleString('fr-FR') + ' DZD';
+            remEl.style.color = rem < 0 ? 'var(--danger)' : 'var(--success)';
 
-            // Calculer par catégorie
-            const categorySummary = {};
-            DEFAULT_CATEGORIES.forEach(cat => {
-                categorySummary[cat] = { count: 0, totalEst: 0, totalAct: 0 };
+            const summary = {};
+            DEFAULT_CATEGORIES.forEach(c => summary[c] = { count: 0, est: 0, act: 0 });
+            state.requests.forEach(r => {
+                const c = r.category || 'Autres besoins du foyer';
+                if (!summary[c]) summary[c] = { count: 0, est: 0, act: 0 };
+                summary[c].count++;
+                if (r.status === 'en attente') summary[c].est += r.totalEstimated;
+                if (r.status === 'acheté') summary[c].act += (r.actualTotal || 0);
             });
 
-            state.requests.forEach(r => {
-                const cat = r.category || 'Autres besoins du foyer';
-                if (!categorySummary[cat]) {
-                    categorySummary[cat] = { count: 0, totalEst: 0, totalAct: 0 };
+            const tbody = document.getElementById('category-budget-tbody');
+            tbody.innerHTML = '';
+            Object.keys(summary).forEach(c => {
+                const d = summary[c];
+                if (d.count > 0 || d.est > 0 || d.act > 0) {
+                    tbody.innerHTML += `<tr><td><strong>${c}</strong></td><td>${d.count}</td><td>${d.est.toLocaleString('fr-FR')} DZD</td><td>${d.act.toLocaleString('fr-FR')} DZD</td></tr>`;
                 }
-                categorySummary
+            });
+        }
+
+        function renderAll() { renderDashboard(); renderRequests(); renderBudgetSummary(); }
+
+        function renderDashboard() {
+            document.getElementById('stat-budget').innerText = state.monthlyBudget.toLocaleString('fr-FR') + ' DZD';
+            document.getElementById('stat-estimated').innerText = state.requests.filter(r => r.status === 'en attente').reduce((a, b) => a + b.totalEstimated, 0).toLocaleString('fr-FR') + ' DZD';
+            document.getElementById('stat-actual').innerText = state.requests.filter(r => r.status === 'acheté').reduce((a, b) => a + (b.actualTotal || 0), 0).toLocaleString('fr-FR') + ' DZD';
+            document.getElementById('stat-pending').innerText = state.requests.filter(r => r.status === 'en attente').length;
+
+            const search = (document.getElementById('dashSearchInput').value || '').toLowerCase();
+            const status = document.getElementById('dashFilterStatus').value;
+            const category = document.getElementById('dashFilterCategory').value;
+
+            const filtered = state.requests.filter(r => {
+                return (r.productName.toLowerCase().includes(search)) &&
+                       (!status || r.status === status) &&
+                       (!category || r.category === category);
+            });
+
+            const tbody = document.getElementById('recent-tbody');
+            tbody.innerHTML = filtered.length ? '' : `<tr><td colspan="6" style="text-align: center; color: var(--text-light);">Aucun produit</td></tr>`;
+            filtered.forEach(r => {
+                tbody.innerHTML += `<tr>
+                    <td><strong>${r.productName}</strong></td>
+                    <td><span class="badge badge-category">${r.category}</span></td>
+                    <td><span class="badge badge-creator">${r.creator}</span></td>
+                    <td><span class="badge badge-priority-${r.priority.toLowerCase()}">${r.priority}</span></td>
+                    <td>${r.totalEstimated.toLocaleString('fr-FR')} DZD</td>
+                    <td><span class="badge badge-${r.status === 'acheté' ? 'purchased' : (r.status === 'annulé' ? 'cancelled' : 'pending')}">${r.status}</span></td>
+                </tr>`;
+            });
+        }
+
+        function renderRequests() {
+            const search = (document.getElementById('searchInput').value || '').toLowerCase();
+            const status = document.getElementById('filterStatus').value;
+            const category = document.getElementById('filterCategory').value;
+
+            const filtered = state.requests.filter(r => {
+                return (r.productName.toLowerCase().includes(search)) &&
+                       (!status || r.status === status) &&
+                       (!category || r.category === category);
+            });
+
+            const tbody = document.getElementById('requests-tbody');
+            tbody.innerHTML = filtered.length ? '' : `<tr><td colspan="7" style="text-align: center; color: var(--text-light);">Aucune demande</td></tr>`;
+            
+            filtered.forEach(r => {
+                let statusHtml = `<span class="badge badge-${r.status === 'acheté' ? 'purchased' : (r.status === 'annulé' ? 'cancelled' : 'pending')}">${r.status}</span>`;
+                if (r.status === 'acheté') statusHtml += `<br><small style="color:var(--success)">Réel: ${r.actualTotal.toLocaleString('fr-FR')} DZD</small>`;
+
+                let actions = `<div style="display:flex; gap:0.5rem; flex-wrap:wrap;">`;
+                if (r.status === 'en attente') {
+                    actions += `<button class="btn btn-sm btn-success" onclick="markAsPurchased('${r.id}')">✓ Acheté</button>`;
+                    actions += `<button class="btn btn-sm btn-secondary" onclick="editRequest('${r.id}')">Modifier</button>`;
+                    actions += `<button class="btn btn-sm btn-danger" onclick="markAsCancelled('${r.id}')">Annuler</button>`;
+                } else if (r.status === 'acheté') {
+                    if (state.currentUser === 'Mari') actions += `<button class="btn btn-sm" onclick="openPriceModal('${r.id}', false)">Corriger</button>`;
+                    actions += `<span style="font-size:0.85rem; color:var(--text-light)">Verrouillé</span>`;
+                } else {
+                    actions += `<button class="btn btn-sm btn-danger" onclick="deleteRequest('${r.id}')">Supprimer</button>`;
+                }
+                actions += `</div>`;
+
+                tbody.innerHTML += `<tr>
+                    <td><strong>${r.productName}</strong><br><small>${r.description || ''}</small></td>
+                    <td><span class="badge badge-category">${r.category}</span></td>
+                    <td>Qté: ${r.quantity} | ${r.unitPrice.toLocaleString('fr-FR')} DZD</td>
+                    <td><strong>${r.totalEstimated.toLocaleString('fr-FR')} DZD</strong></td>
+                    <td><span class="badge badge-creator">${r.creator}</span><br><small>${r.desiredDate || ''}</small></td>
+                    <td>${statusHtml}</td>
+                    <td>${actions}</td>
+                </tr>`;
+            });
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const dl = document.createElement('a'); dl.setAttribute("href", dataStr);
+            dl.setAttribute("download", "nos_besoins_backup.json"); document.body.appendChild(dl); dl.click(); dl.remove();
+        }
+        function confirmResetData() {
+            if (confirm('Réinitialiser toutes les données ?')) { localStorage.clear(); location.reload(); }
+        }
+        function showToast(msg, type='success') {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div'); t.className = `toast ${type}`; t.innerText = msg;
+            c.appendChild(t); setTimeout(() => t.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
