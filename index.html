@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="femme">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nos Besoins - Gestion Familiale Synchronisée</title>
+
+    <!-- PWA & Mobile Icons -->
+    <meta name="theme-color" content="#db2777">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Nos Besoins">
+    
+    <!-- Scripts Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <style>
+        /* --- VARIABLES ET THÈMES --- */
+        :root {
+            --transition: all 0.3s ease;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Thème Femme (Rose / Fuchsia) */
+        [data-theme="femme"] {
+            --primary: #db2777;
+            --primary-light: #fce7f3;
+            --primary-dark: #be185d;
+            --accent: #f43f5e;
+            --bg: #fff1f2;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --border: #fbcfe8;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+        }
+
+        /* Thème Mari (Bleu / Gris / Neutre) */
+        [data-theme="mari"] {
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --primary-dark: #1d4ed8;
+            --accent: #475569;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #cbd5e1;
+            --success: #16a34a;
+            --warning: #ca8a04;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+        }
+
+        /* --- HEADER & NAVIGATION --- */
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 2px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            background-color: var(--primary);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .logo-area h1 {
+            font-size: 1.5rem;
+            color: var(--primary-dark);
+        }
+
+        .user-switcher {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--bg);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .user-switcher select {
+            background: transparent;
+            border: none;
+            font-weight: 600;
+            color: var(--text);
+            font-size: 1rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        nav {
+            background-color: var(--card-bg);
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .nav-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* --- CONTENEUR PRINCIPAL --- */
+        main {
+            flex: 1;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- CARTES & COMPOSANTS --- */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        .grid-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            border-left: 5px solid var(--primary);
+            padding: 1.25rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border-top: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat-card h3 {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: var(--text);
+        }
+
+        /* --- FORMULAIRES --- */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        input, select, textarea {
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            background-color: var(--card-bg);
+            color: var(--text);
+            transition: var(--transition);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        /* --- BOUTONS --- */
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: var(--text-light);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--text);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+
+        .btn-success {
+            background-color: var(--success);
+        }
+
+        .btn-success:hover {
+            background-color: #047857;
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+
+        /* --- TABLEAUX & LISTES --- */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+
+        tr:hover td {
+            background-color: rgba(0,0,0,0.01);
+        }
+
+        /* --- BADGES --- */
+        .badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .badge-pending { background-color: #fef3c7; color: #b45309; }
+        .badge-purchased { background-color: #d1fae5; color: #065f46; }
+        .badge-cancelled { background-color: #fee2e2; color: #991b1b; }
+
+        .badge-priority-haute { background-color: #fee2e2; color: #991b1b; }
+        .badge-priority-moyenne { background-color: #fef3c7; color: #b45309; }
+        .badge-priority-basse { background-color: #e0f2fe; color: #0369a1; }
+
+        .badge-creator {
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            border: 1px solid var(--border);
+        }
+
+        /* --- FILTRES & RECHERCHE --- */
+        .filters-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .filters-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        /* --- MODAL --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 2rem;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            transform: scale(0.95);
+            transition: var(--transition);
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+
+        /* --- NOTIFICATIONS TOAST --- */
+        #toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1100;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .toast {
+            background-color: var(--card-bg);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid var(--primary);
+            animation: slideIn 0.3s ease;
+            font-weight: 600;
+        }
+
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .sync-banner {
+            background-color: #fef3c7;
+            color: #b45309;
+            padding: 0.5rem 1rem;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: bold;
+            border-bottom: 1px solid var(--border);
+        }
+
+        @media(max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+            .filters-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .filters-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body data-theme="femme">
+
+    <!-- BANNER SYNCHRONISATION -->
+    <div class="sync-banner" id="syncBanner">
+        🔄 Mode Local. Configurez Firebase dans l'onglet "Données & Synchronisation" pour lier vos téléphones.
+    </div>
+
+    <!-- HEADER -->
+    <header>
+        <div class="logo-area">
+            <div class="logo-icon">NB</div>
+            <h1>Nos Besoins</h1>
+        </div>
+        <div class="user-switcher">
+            <label for="profileSelect">Mode Actuel :</label>
+            <select id="profileSelect" onchange="switchProfile(this.value)">
+                <option value="Femme">👩 Mode Femme</option>
+                <option value="Mari">👨 Mode Mari</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- NAVIGATION -->
+    <nav>
+        <button class="nav-btn active" onclick="switchView('dashboard', this)">Tableau de bord</button>
+        <button class="nav-btn" onclick="switchView('requests', this)">Liste des demandes</button>
+        <button class="nav-btn" onclick="switchView('form-view', this)" id="navAddBtn">Ajouter un besoin</button>
+        <button class="nav-btn" onclick="switchView('budget', this)">Gestion du budget</button>
+        <button class="nav-btn" onclick="switchView('data-view', this)">Données & Synchronisation</button>
+    </nav>
+
+    <!-- CONTENU PRINCIPAL -->
+    <main>
+
+        <!-- 1. TABLEAU DE BORD -->
+        <section id="dashboard" class="view-section active">
+            <div class="grid-stats">
+                <div class="stat-card">
+                    <h3>Budget Mensuel Global</h3>
+                    <div class="value" id="stat-budget">0 DZD</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Estimé (Panier)</h3>
+                    <div class="value" id="stat-estimated">0 DZD</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Réel Dépensé</h3>
+                    <div class="value" id="stat-actual">0 DZD</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Demandes en attente</h3>
+                    <div class="value" id="stat-pending">0</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Aperçu rapide & Activité récente</h2>
+                <p style="margin-top: 0.50rem; color: var(--text-light);">Bienvenue sur votre espace de gestion du foyer. Consultez rapidement l'état de vos achats ci-dessous.</p>
+                <div class="table-responsive">
+                    <table id="recent-table">
+                        <thead>
+                            <tr>
+                                <th>Produit</th>
+                                <th>Créateur</th>
+                                <th>Priorité</th>
+                                <th>Total Estimé</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-tbody">
+                            <!-- Rempli par JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. LISTE DES DEMANDES -->
+        <section id="requests" class="view-section">
+            <div class="card">
+                <h2>Liste complète des demandes</h2>
+                <div class="filters-bar" style="margin-top: 1rem;">
+                    <div class="filters-group">
+                        <input type="text" id="searchInput" placeholder="Rechercher un produit..." oninput="renderRequests()">
+                        <select id="filterStatus" onchange="renderRequests()">
+                            <option value="">Tous les statuts</option>
+                            <option value="en attente">En attente</option>
+                            <option value="acheté">Acheté</option>
+                            <option value="annulé">Annulé</option>
+                        </select>
+                        <select id="filterPriority" onchange="renderRequests()">
+                            <option value="">Toutes priorités</option>
+                            <option value="Haute">Haute</option>
+                            <option value="Moyenne">Moyenne</option>
+                            <option value="Basse">Basse</option>
+                        </select>
+                        <select id="filterCreator" onchange="renderRequests()">
+                            <option value="">Tous les créateurs</option>
+                            <option value="Femme">Femme</option>
+                            <option value="Mari">Mari</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-sm" onclick="switchView('form-view', document.querySelector('nav button:nth-child(3)'))">+ Nouveau besoin</button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Produit</th>
+                                <th>Qté & Prix Est.</th>
+                                <th>Total Est.</th>
+                                <th>Créateur / Date</th>
+                                <th>Statut / Réel</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requests-tbody">
+                            <!-- Rempli par JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. FORMULAIRE D'AJOUT / MODIFICATION -->
+        <section id="form-view" class="view-section">
+            <div class="card">
+                <h2 id="form-title">Ajouter un nouveau besoin</h2>
+                <form id="needForm" onsubmit="handleFormSubmit(event)" style="margin-top: 1.5rem;">
+                    <input type="hidden" id="editId">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="productName">Nom du produit / besoin *</label>
+                            <input type="text" id="productName" list="suggestionsList" required placeholder="Ex: Lait, Lessive, etc.">
+                            <datalist id="suggestionsList">
+                                <!-- Suggestions dynamiques -->
+                            </datalist>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Catégorie</label>
+                            <select id="category">
+                                <option value="Produits alimentaires">Produits alimentaires</option>
+                                <option value="Produits d'hygiène">Produits d'hygiène</option>
+                                <option value="Produits ménagers">Produits ménagers</option>
+                                <option value="Vêtements et chaussures">Vêtements et chaussures</option>
+                                <option value="Produits pour bébé">Produits pour bébé</option>
+                                <option value="Santé">Santé</option>
+                                <option value="Électroménager">Électroménager</option>
+                                <option value="Mobilier">Mobilier</option>
+                                <option value="Fournitures scolaires">Fournitures scolaires</option>
+                                <option value="Autres besoins du foyer" selected>Autres besoins du foyer</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="quantity">Quantité prévue *</label>
+                            <input type="number" id="quantity" min="1" value="1" required oninput="calculateEstimatedTotal()">
+                        </div>
+                        <div class="form-group">
+                            <label for="unitPrice">Prix unitaire estimé (DZD) *</label>
+                            <input type="number" id="unitPrice" min="0" step="0.01" required oninput="calculateEstimatedTotal()" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="totalEstimatedDisplay">Total estimé (DZD)</label>
+                            <input type="text" id="totalEstimatedDisplay" readonly value="0.00 DZD" style="background-color: var(--primary-light); font-weight: bold;">
+                        </div>
+                        <div class="form-group">
+                            <label for="priority">Priorité</label>
+                            <select id="priority">
+                                <option value="Basse">Basse</option>
+                                <option value="Moyenne" selected>Moyenne</option>
+                                <option value="Haute">Haute</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="desiredDate">Date souhaitée d'achat</label>
+                            <input type="date" id="desiredDate">
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="description">Description facultative</label>
+                            <textarea id="description" rows="3" placeholder="Précisions sur la marque, le modèle, le magasin..."></textarea>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                        <button type="button" class="btn btn-secondary" onclick="switchView('requests', document.querySelector('nav button:nth-child(2)'))">Annuler</button>
+                        <button type="submit" class="btn">Enregistrer le besoin</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- 4. GESTION DU BUDGET -->
+        <section id="budget" class="view-section">
+            <div class="card">
+                <h2>Configuration du Budget</h2>
+                <form id="budgetForm" onsubmit="saveBudget(event)" style="margin-top: 1.5rem; max-width: 400px;">
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label for="monthlyBudgetInput">Montant du budget mensuel global (DZD)</label>
+                        <input type="number" id="monthlyBudgetInput" min="0" step="1" required placeholder="Ex: 80000">
+                    </div>
+                    <button type="submit" class="btn">Mettre à jour le budget</button>
+                </form>
+            </div>
+            <div class="card">
+                <h2>Synthèse financière</h2>
+                <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+                    <div><strong>Budget défini :</strong> <span id="summaryBudget">0</span> DZD</div>
+                    <div><strong>Total Réel Dépensé :</strong> <span id="summaryActual">0</span> DZD</div>
+                    <div><strong>Reste disponible :</strong> <span id="summaryRemaining" style="font-weight: bold;">0</span> DZD</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. GESTION DES DONNÉES & SYNCHRONISATION -->
+        <section id="data-view" class="view-section">
+            <div class="card">
+                <h2>📱 Synchronisation 2 Téléphones (Firebase)</h2>
+                <p style="margin: 0.5rem 0 1rem 0; color: var(--text-light);">
+                    Collez votre configuration Firebase JSON ci-dessous pour connecter les téléphones du foyer en temps réel.
+                </p>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="firebaseConfigInput">Configuration Firebase (JSON)</label>
+                    <textarea id="firebaseConfigInput" rows="6" placeholder='{"apiKey": "...", "databaseURL": "...", "projectId": "..."}'></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <button class="btn" onclick="setupFirebase()">Connecter la synchronisation</button>
+                    <button class="btn btn-secondary" onclick="requestNotificationPermission()">🔔 Activer les notifications</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Exportation et Importation manuelle</h2>
+                <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+                    <button class="btn" onclick="exportData()">📥 Exporter les données (JSON)</button>
+                    <label class="btn btn-secondary" style="cursor: pointer; margin: 0;">
+                        📤 Importer des données <input type="file" id="importFile" accept=".json" onchange="importData(event)" style="display: none;">
+                    </label>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Zone de danger</h2>
+                <button class="btn btn-danger" onclick="confirmResetData()">Réinitialiser toutes les données</button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODALE SAISIE PRIX RÉEL (ACHAT / CORRECTION) -->
+    <div class="modal-overlay" id="priceModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Validation de l'achat & Saisie du prix</h3>
+                <button class="modal-close" onclick="closePriceModal()">&times;</button>
+            </div>
+            <form id="priceCorrectionForm" onsubmit="savePriceCorrection(event)">
+                <input type="hidden" id="correctId">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label id="modalProductName" style="font-size: 1.1rem; color: var(--primary); margin-bottom: 0.5rem; display:block;"></label>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="correctActualQty">Quantité réellement achetée</label>
+                    <input type="number" id="correctActualQty" min="1" required oninput="calculateModalTotal()">
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="correctActualPrice">Prix unitaire réellement payé (DZD)</label>
+                    <input type="number" id="correctActualPrice" min="0" step="0.01" required oninput="calculateModalTotal()" placeholder="0.00">
+                </div>
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label>Total réel calculé : <span id="modalTotalCalculated" style="font-weight: bold;">0.00 DZD</span></label>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closePriceModal()">Annuler</button>
+                    <button type="submit" class="btn btn-success" id="modalSubmitBtn">Valider l'achat</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS -->
+    <div id="toast-container"></div>
+
+    <!-- CODE JAVASCRIPT -->
+    <script>
+        let state = {
+            currentUser: 'Femme',
+            monthlyBudget: 80000,
+            requests: []
+        };
+
+        let dbRef = null;
+        let isFirebaseActive = false;
+
+        const DEFAULT_SUGGESTIONS = [
+            "Lait", "Pain", "Œufs", "Sucre", "Café", "Huile", "Farine", "Pâtes", "Riz", "Tomates",
+            "Savon", "Dentifrice", "Shampooing", "Papier toilette", "Lessive", "Liquide vaisselle",
+            "Javel", "Sacs poubelle", "Couches bébé", "Lait bébé", "Paracétamol", "Eau minérale"
+        ];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFromLocalStorage();
+            initFirebaseIfAvailable();
+            initTheme();
+            renderAll();
+            requestNotificationPermission();
+        });
+
+        function loadFromLocalStorage() {
+            const savedState = localStorage.getItem('nos_besoins_state');
+            if (savedState) {
+                try {
+                    state = JSON.parse(savedState);
+                } catch (e) {
+                    console.error("Erreur de chargement du localStorage", e);
+                }
+            } else {
+                state.requests = [
+                    {
+                        id: 'req-1',
+                        productName: 'Lait demi-écrémé (Pack)',
+                        category: 'Produits alimentaires',
+                        quantity: 2,
+                        unitPrice: 750,
+                        totalEstimated: 1500,
+                        priority: 'Haute',
+                        desiredDate: '2026-10-20',
+                        description: 'Marque Candia de préférence',
+                        creator: 'Femme',
+                        status: 'en attente',
+                        actualUnitPrice: 0,
+                        actualQty: 0,
+                        actualTotal: 0,
+                        purchaseDate: null,
+                        purchaseComment: ''
+                    }
+                ];
+                saveToLocalStorage();
+            }
+            document.getElementById('profileSelect').value = state.currentUser;
+            document.getElementById('monthlyBudgetInput').value = state.monthlyBudget;
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('nos_besoins_state', JSON.stringify(state));
+            if (isFirebaseActive && dbRef) {
+                dbRef.set(state);
+            }
+        }
+
+        function initFirebaseIfAvailable() {
+            const configStr = localStorage.getItem('nos_besoins_firebase_config');
+            if (configStr) {
+                try {
+                    const config = JSON.parse(configStr);
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp(config);
+                    }
+                    dbRef = firebase.database().ref('nos_besoins_data');
+                    isFirebaseActive = true;
+
+                    const banner = document.getElementById('syncBanner');
+                    banner.innerText = "🟢 Synchronisation en temps réel activée sur les 2 téléphones !";
+                    banner.style.backgroundColor = "var(--primary-light)";
+                    banner.style.color = "var(--primary-dark)";
+
+                    let initialLoad = true;
+                    dbRef.on('value', (snapshot) => {
+                        const remoteData = snapshot.val();
+                        if (remoteData) {
+                            if (!initialLoad && remoteData.requests && remoteData.requests.length > state.requests.length) {
+                                const newReq = remoteData.requests[0];
+                                if (newReq.creator !== state.currentUser) {
+                                    sendPushNotification("Nouveau besoin ajouté !", `${newReq.creator} a ajouté : ${newReq.productName}`);
+                                }
+                            }
+
+                            const currentUserBackup = state.currentUser;
+                            state = remoteData;
+                            state.currentUser = currentUserBackup;
+
+                            localStorage.setItem('nos_besoins_state', JSON.stringify(state));
+                            renderAll();
+                        }
+                        initialLoad = false;
+                    });
+
+                } catch (err) {
+                    console.error("Erreur Firebase", err);
+                }
+            }
+        }
+
+        function setupFirebase() {
+            const input = document.getElementById('firebaseConfigInput').value.trim();
+            if (!input) return;
+            try {
+                JSON.parse(input);
+                localStorage.setItem('nos_besoins_firebase_config', input);
+                showToast('Configuration enregistrée ! Redémarrage...', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } catch (e) {
+                showToast('Format JSON invalide.', 'error');
+            }
+        }
+
+        function requestNotificationPermission() {
+            if ("Notification" in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        showToast('Notifications activées !', 'success');
+                    }
+                });
+            }
+        }
+
+        function sendPushNotification(title, body) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(title, {
+                    body: body,
+                    icon: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                });
+            }
+        }
+
+        function switchProfile(profile) {
+            state.currentUser = profile;
+            initTheme();
+            saveToLocalStorage();
+            renderAll();
+            showToast(`Mode basculé sur : ${profile}`, 'success');
+        }
+
+        function initTheme() {
+            const theme = state.currentUser === 'Mari' ? 'mari' : 'femme';
+            document.body.setAttribute('data-theme', theme);
+        }
+
+        function switchView(viewId, btnElement) {
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('nav .nav-btn').forEach(btn => btn.classList.remove('active'));
+
+            document.getElementById(viewId).classList.add('active');
+            if (btnElement) btnElement.classList.add('active');
+
+            if (viewId === 'requests') renderRequests();
+            if (viewId === 'dashboard') renderDashboard();
+            if (viewId === 'budget') renderBudgetSummary();
+            if (viewId === 'form-view') resetForm();
+        }
+
+        function calculateEstimatedTotal() {
+            const qty = parseFloat(document.getElementById('quantity').value) || 0;
+            const price = parseFloat(document.getElementById('unitPrice').value) || 0;
+            const total = qty * price;
+            document.getElementById('totalEstimatedDisplay').value = total.toLocaleString('fr-FR') + ' DZD';
+        }
+
+        function updateSuggestionsDatalist() {
+            const datalist = document.getElementById('suggestionsList');
+            datalist.innerHTML = '';
+            const userProducts = state.requests.map(r => r.productName);
+            const allSuggestions = Array.from(new Set([...DEFAULT_SUGGESTIONS, ...userProducts]));
+
+            allSuggestions.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item;
+                datalist.appendChild(opt);
+            });
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            const editId = document.getElementById('editId').value;
+            const productName = document.getElementById('productName').value.trim();
+            const category = document.getElementById('category').value;
+            const quantity = parseFloat(document.getElementById('quantity').value);
+            const unitPrice = parseFloat(document.getElementById('unitPrice').value);
+            const priority = document.getElementById('priority').value;
+            const desiredDate = document.getElementById('desiredDate').value;
+            const description = document.getElementById('description').value.trim();
+
+            const totalEstimated = quantity * unitPrice;
+
+            if (editId) {
+                const req = state.requests.find(r => r.id === editId);
+                if (req) {
+                    req.productName = productName;
+                    req.category = category;
+                    req.quantity = quantity;
+                    req.unitPrice = unitPrice;
+                    req.totalEstimated = totalEstimated;
+                    req.priority = priority;
+                    req.desiredDate = desiredDate;
+                    req.description = description;
+                    showToast('Besoin mis à jour !', 'success');
+                }
+            } else {
+                const newReq = {
+                    id: 'req-' + Date.now(),
+                    productName,
+                    category,
+                    quantity,
+                    unitPrice,
+                    totalEstimated,
+                    priority,
+                    desiredDate,
+                    description,
+                    creator: state.currentUser,
+                    status: 'en attente',
+                    actualUnitPrice: 0,
+                    actualQty: 0,
+                    actualTotal: 0,
+                    purchaseDate: null,
+                    purchaseComment: ''
+                };
+                state.requests.unshift(newReq);
+                showToast('Nouveau besoin ajouté !', 'success');
+            }
+
+            saveToLocalStorage();
+            switchView('requests', document.querySelector('nav button:nth-child(2)'));
+        }
+
+        function editRequest(id) {
+            const req = state.requests.find(r => r.id === id);
+            if (!req) return;
+
+            if (req.status === 'acheté' && state.currentUser !== 'Mari') {
+                showToast('Impossible de modifier un besoin déjà acheté.', 'error');
+                return;
+            }
+
+            document.getElementById('editId').value = req.id;
+            document.getElementById('productName').value = req.productName;
+            document.getElementById('category').value = req.category;
+            document.getElementById('quantity').value = req.quantity;
+            document.getElementById('unitPrice').value = req.unitPrice;
+            document.getElementById('priority').value = req.priority;
+            document.getElementById('desiredDate').value = req.desiredDate || '';
+            document.getElementById('description').value = req.description || '';
+            document.getElementById('form-title').innerText = 'Modifier le besoin';
+            calculateEstimatedTotal();
+
+            switchView('form-view', document.querySelector('nav button:nth-child(3)'));
+        }
+
+        function resetForm() {
+            document.getElementById('editId').value = '';
+            document.getElementById('needForm').reset();
+            document.getElementById('form-title').innerText = 'Ajouter un nouveau besoin';
+            document.getElementById('quantity').value = 1;
+            calculateEstimatedTotal();
+            updateSuggestionsDatalist();
+        }
+
+        function markAsPurchased(id) {
+            openPriceModal(id, true);
+        }
+
+        function markAsCancelled(id) {
+            const req = state.requests.find(r => r.id === id);
+            if (!req) return;
+            req.status = 'annulé';
+            saveToLocalStorage();
+            renderAll();
+            showToast('Besoin annulé.', 'success');
+        }
+
+        function deleteRequest(id) {
+            if (!confirm('Voulez-vous vraiment supprimer ce besoin ?')) return;
+            state.requests = state.requests.filter(r => r.id !== id);
+            saveToLocalStorage();
+            renderAll();
+            showToast('Besoin supprimé.', 'success');
+        }
+
+        function openPriceModal(id, isInitialPurchase = false) {
+            const req = state.requests.find(r => r.id === id);
+            if (!req) return;
+
+            document.getElementById('correctId').value = req.id;
+            document.getElementById('modalProductName').innerText = `${req.productName} (Prix estimé: ${req.unitPrice} DZD)`;
+            document.getElementById('correctActualQty').value = req.actualQty || req.quantity;
+            document.getElementById('correctActualPrice').value = req.actualUnitPrice || req.unitPrice;
+
+            if (isInitialPurchase) {
+                document.getElementById('modalTitle').innerText = "Validation de l'achat - Saisie du prix réel";
+                document.getElementById('modalSubmitBtn').innerText = "Valider l'achat";
+            } else {
+                document.getElementById('modalTitle').innerText = "Correction du prix réel";
+                document.getElementById('modalSubmitBtn').innerText = "Enregistrer la correction";
+            }
+
+            calculateModalTotal();
+            document.getElementById('priceModal').classList.add('active');
+        }
+
+        function closePriceModal() {
+            document.getElementById('priceModal').classList.remove('active');
+        }
+
+        function calculateModalTotal() {
+            const qty = parseFloat(document.getElementById('correctActualQty').value) || 0;
+            const price = parseFloat(document.getElementById('correctActualPrice').value) || 0;
+            const total = qty * price;
+            document.getElementById('modalTotalCalculated').innerText = total.toLocaleString('fr-FR') + ' DZD';
+        }
+
+        function savePriceCorrection(event) {
+            event.preventDefault();
+            const id = document.getElementById('correctId').value;
+            const req = state.requests.find(r => r.id === id);
+            if (!req) return;
+
+            const actualQty = parseFloat(document.getElementById('correctActualQty').value);
+            const actualUnitPrice = parseFloat(document.getElementById('correctActualPrice').value);
+
+            req.status = 'acheté';
+            req.actualQty = actualQty;
+            req.actualUnitPrice = actualUnitPrice;
+            req.actualTotal = actualQty * actualUnitPrice;
+            if (!req.purchaseDate) {
+                req.purchaseDate = new Date().toISOString().split('T')[0];
+            }
+
+            saveToLocalStorage();
+            closePriceModal();
+            renderAll();
+            showToast('Achat et prix enregistrés avec succès !', 'success');
+        }
+
+        function saveBudget(event) {
+            event.preventDefault();
+            const val = parseFloat(document.getElementById('monthlyBudgetInput').value);
+            if (isNaN(val) || val < 0) return;
+            state.monthlyBudget = val;
+            saveToLocalStorage();
+            renderBudgetSummary();
+            renderDashboard();
+            showToast('Budget mis à jour !', 'success');
+        }
+
+        function renderBudgetSummary() {
+            document.getElementById('summaryBudget').innerText = state.monthlyBudget.toLocaleString('fr-FR');
+            const totalActual = state.requests
+                .filter(r => r.status === 'acheté')
+                .reduce((acc, r) => acc + (r.actualTotal || 0), 0);
+            
+            document.getElementById('summaryActual').innerText = totalActual.toLocaleString('fr-FR');
+            const remaining = state.monthlyBudget - totalActual;
+            const remEl = document.getElementById('summaryRemaining');
+            remEl.innerText = remaining.toLocaleString('fr-FR') + ' DZD';
+            remEl.style.color = remaining < 0 ? 'var(--danger)' : 'var(--success)';
+        }
+
+        function renderAll() {
+            renderDashboard();
+            renderRequests();
+            renderBudgetSummary();
+        }
+
+        function renderDashboard() {
+            const totalEst = state.requests
+                .filter(r => r.status === 'en attente')
+                .reduce((acc, r) => acc + r.totalEstimated, 0);
+
+            const totalAct = state.requests
+                .filter(r => r.status === 'acheté')
+                .reduce((acc, r) => acc + (r.actualTotal || 0), 0);
+
+            const pendingCount = state.requests.filter(r => r.status === 'en attente').length;
+
+            document.getElementById('stat-budget').innerText = state.monthlyBudget.toLocaleString('fr-FR') + ' DZD';
+            document.getElementById('stat-estimated').innerText = totalEst.toLocaleString('fr-FR') + ' DZD';
+            document.getElementById('stat-actual').innerText = totalAct.toLocaleString('fr-FR') + ' DZD';
+            document.getElementById('stat-pending').innerText = pendingCount;
+
+            const tbody = document.getElementById('recent-tbody');
+            tbody.innerHTML = '';
+            const recent = state.requests.slice(0, 5);
+
+            if (recent.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-light);">Aucun besoin enregistré.</td></tr>`;
+                return;
+            }
+
+            recent.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${escapeHtml(r.productName)}</strong><br><small style="color:var(--text-light);">${escapeHtml(r.category)}</small></td>
+                    <td><span class="badge badge-creator">${r.creator}</span></td>
+                    <td><span class="badge badge-priority-${r.priority.toLowerCase()}">${r.priority}</span></td>
+                    <td>${r.totalEstimated.toLocaleString('fr-FR')} DZD</td>
+                    <td><span class="badge badge-${r.status === 'acheté' ? 'purchased' : (r.status === 'annulé' ? 'cancelled' : 'pending')}">${r.status}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderRequests() {
+            const tbody = document.getElementById('requests-tbody');
+            tbody.innerHTML = '';
+
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('filterStatus').value;
+            const priorityFilter = document.getElementById('filterPriority').value;
+            const creatorFilter = document.getElementById('filterCreator').value;
+
+            const filtered = state.requests.filter(r => {
+                const matchSearch = r.productName.toLowerCase().includes(search) || (r.description && r.description.toLowerCase().includes(search));
+                const matchStatus = !statusFilter || r.status === statusFilter;
+                const matchPriority = !priorityFilter || r.priority === priorityFilter;
+                const matchCreator = !creatorFilter || r.creator === creatorFilter;
+                return matchSearch && matchStatus && matchPriority && matchCreator;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-light);">Aucune demande ne correspond aux filtres.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(r => {
+                const tr = document.createElement('tr');
+                
+                let statusHtml = `<span class="badge badge-${r.status === 'acheté' ? 'purchased' : (r.status === 'annulé' ? 'cancelled' : 'pending')}">${r.status}</span>`;
+                if (r.status === 'acheté') {
+                    statusHtml += `<br><small style="color: var(--success); font-weight: bold;">Réel: ${r.actualTotal.toLocaleString('fr-FR')} DZD</small>`;
+                }
+
+                let actionsHtml = `<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">`;
+                
+                if (r.status === 'en attente') {
+                    actionsHtml += `<button class="btn btn-sm btn-success" onclick="markAsPurchased('${r.id}')" title="Saisir le prix et marquer acheté">✓ Acheté</button>`;
+                    actionsHtml += `<button class="btn btn-sm btn-secondary" onclick="editRequest('${r.id}')" title="Modifier">Modifier</button>`;
+                    actionsHtml += `<button class="btn btn-sm btn-danger" onclick="markAsCancelled('${r.id}')">Annuler</button>`;
+                } else if (r.status === 'acheté') {
+                    if (state.currentUser === 'Mari') {
+                        actionsHtml += `<button class="btn btn-sm" onclick="openPriceModal('${r.id}', false)" title="Corriger le prix réel">Corriger Prix</button>`;
+                    }
+                    actionsHtml += `<span style="font-size: 0.85rem; color: var(--text-light); align-self: center;">Verrouillé</span>`;
+                } else {
+                    actionsHtml += `<button class="btn btn-sm btn-danger" onclick="deleteRequest('${r.id}')">Supprimer</button>`;
+                }
+                actionsHtml += `</div>`;
+
+                tr.innerHTML = `
+                    <td>
+                        <strong>${escapeHtml(r.productName)}</strong>
+                        ${r.description ? `<br><small style="color: var(--text-light);">${escapeHtml(r.description)}</small>` : ''}
+                        <br><small style="color: var(--text-light);">${escapeHtml(r.category)}</small>
+                    </td>
+                    <td>
+                        Qté: ${r.quantity} | ${r.unitPrice.toLocaleString('fr-FR')} DZD /u
+                    </td>
+                    <td><strong>${r.totalEstimated.toLocaleString('fr-FR')} DZD</strong></td>
+                    <td>
+                        <span class="badge badge-creator">${r.creator}</span>
+                        <br><small>${r.desiredDate || 'Pas de date'}</small>
+                    </td>
+                    <td>${statusHtml}</td>
+                    <td>${actionsHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `nos_besoins_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+            showToast('Données exportées avec succès !', 'success');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported && imported.requests && Array.isArray(imported.requests)) {
+                        state = imported;
+                        saveToLocalStorage();
+                        document.getElementById('profileSelect').value = state.currentUser;
+                        document.getElementById('monthlyBudgetInput').value = state.monthlyBudget;
+                        initTheme();
+                        renderAll();
+                        showToast('Données importées avec succès !', 'success');
+                    } else {
+                        showToast('Fichier de sauvegarde invalide.', 'error');
+                    }
+                } catch (err) {
+                    showToast('Erreur de lecture du fichier JSON.', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function confirmResetData() {
+            if (confirm('Êtes-vous sûr de vouloir réinitialiser toutes les données ? Cette action est irréversible.')) {
+                localStorage.removeItem('nos_besoins_state');
+                localStorage.removeItem('nos_besoins_firebase_config');
+                location.reload();
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerText = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+    </script>
+</body>
+</html>
