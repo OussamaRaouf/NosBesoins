@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nos Besoins - Gestion Familiale</title>
+
+    <!-- PWA & Mobile Icons -->
+    <meta name="theme-color" content="#db2777">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Nos Besoins">
     
     <!-- Scripts Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -73,7 +79,7 @@
         .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 1rem; }
-        th, td { padding: 1rem; border-bottom: 1px solid var(--border); }
+        th, td { padding: 0.8rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
         th { background-color: var(--primary-light); color: var(--primary-dark); font-weight: 600; }
         .badge { padding: 0.35rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: bold; display: inline-block; }
         .badge-pending { background-color: #fef3c7; color: #b45309; }
@@ -84,8 +90,14 @@
         .badge-priority-basse { background-color: #e0f2fe; color: #0369a1; }
         .badge-creator { background-color: var(--primary-light); color: var(--primary-dark); border: 1px solid var(--border); }
         .badge-category { background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
-        .filters-bar { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; align-items: center; justify-content: space-between; }
-        .filters-group { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+        
+        .table-filter-row input, .table-filter-row select {
+            width: 100%;
+            padding: 0.4rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: var(--transition); }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
         .modal { background-color: var(--card-bg); border-radius: var(--radius); padding: 2rem; width: 100%; max-width: 500px; box-shadow: var(--shadow); }
@@ -106,7 +118,7 @@
             <h1>Nos Besoins</h1>
         </div>
         <div class="user-switcher">
-            <label for="profileSelect">Mode:</label>
+            <label for="profileSelect">Mode :</label>
             <select id="profileSelect" onchange="switchProfile(this.value)">
                 <option value="Femme">👩 Femme</option>
                 <option value="Homme">👨 Homme</option>
@@ -127,36 +139,12 @@
         <section id="dashboard" class="view-section active">
             <div class="grid-stats">
                 <div class="stat-card"><h3>Budget Global</h3><div class="value" id="stat-budget">0 DZD</div></div>
-                <div class="stat-card"><h3>Panier Estimé</h3><div class="value" id="stat-estimated">0 DZD</div></div>
                 <div class="stat-card"><h3>Total Réel Dépensé</h3><div class="value" id="stat-actual">0 DZD</div></div>
-                <div class="stat-card"><h3>En attente</h3><div class="value" id="stat-pending">0</div></div>
+                <div class="stat-card"><h3>Demandes en attente</h3><div class="value" id="stat-pending">0</div></div>
             </div>
             <div class="card">
                 <h2>Aperçu rapide & Activité récente</h2>
-                <div class="filters-bar" style="margin-top: 1rem;">
-                    <div class="filters-group">
-                        <input type="text" id="dashSearchInput" placeholder="Rechercher..." oninput="renderDashboard()">
-                        <select id="dashFilterStatus" onchange="renderDashboard()">
-                            <option value="">Tous les statuts</option>
-                            <option value="en attente">En attente</option>
-                            <option value="acheté">Acheté</option>
-                            <option value="annulé">Annulé</option>
-                        </select>
-                        <select id="dashFilterCategory" onchange="renderDashboard()">
-                            <option value="">Toutes les catégories</option>
-                            <option value="Produits alimentaires">Produits alimentaires</option>
-                            <option value="Produits d'hygiène">Produits d'hygiène</option>
-                            <option value="Produits ménagers">Produits ménagers</option>
-                            <option value="Vêtements et chaussures">Vêtements et chaussures</option>
-                            <option value="Produits pour bébé">Produits pour bébé</option>
-                            <option value="Santé">Santé</option>
-                            <option value="Électroménager">Électroménager</option>
-                            <option value="Mobilier">Mobilier</option>
-                            <option value="Fournitures scolaires">Fournitures scolaires</option>
-                            <option value="Autres besoins du foyer">Autres besoins</option>
-                        </select>
-                    </div>
-                </div>
+                
                 <div class="table-responsive">
                     <table>
                         <thead>
@@ -165,8 +153,51 @@
                                 <th>Catégorie</th>
                                 <th>Créateur</th>
                                 <th>Priorité</th>
-                                <th>Total Estimé</th>
+                                <th>Total Réel</th>
                                 <th>Statut</th>
+                            </tr>
+                            <!-- FILTRES DANS CHAQUE COLONNE DU TABLEAU DE BORD -->
+                            <tr class="table-filter-row">
+                                <th><input type="text" id="dashColSearch" placeholder="Filtrer..." oninput="renderDashboard()"></th>
+                                <th>
+                                    <select id="dashColCategory" onchange="renderDashboard()">
+                                        <option value="">Toutes</option>
+                                        <option value="Produits alimentaires">Alimentaire</option>
+                                        <option value="Produits d'hygiène">Hygiène</option>
+                                        <option value="Produits ménagers">Ménager</option>
+                                        <option value="Vêtements et chaussures">Vêtements</option>
+                                        <option value="Produits pour bébé">Bébé</option>
+                                        <option value="Santé">Santé</option>
+                                        <option value="Électroménager">Électroménager</option>
+                                        <option value="Mobilier">Mobilier</option>
+                                        <option value="Fournitures scolaires">Scolaire</option>
+                                        <option value="Autres besoins du foyer">Autres</option>
+                                    </select>
+                                </th>
+                                <th>
+                                    <select id="dashColCreator" onchange="renderDashboard()">
+                                        <option value="">Tous</option>
+                                        <option value="Femme">Femme</option>
+                                        <option value="Homme">Homme</option>
+                                    </select>
+                                </th>
+                                <th>
+                                    <select id="dashColPriority" onchange="renderDashboard()">
+                                        <option value="">Toutes</option>
+                                        <option value="Haute">Haute</option>
+                                        <option value="Moyenne">Moyenne</option>
+                                        <option value="Basse">Basse</option>
+                                    </select>
+                                </th>
+                                <th>-</th>
+                                <th>
+                                    <select id="dashColStatus" onchange="renderDashboard()">
+                                        <option value="">Tous</option>
+                                        <option value="en attente">En attente</option>
+                                        <option value="acheté">Acheté</option>
+                                        <option value="annulé">Annulé</option>
+                                    </select>
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="recent-tbody"></tbody>
@@ -179,42 +210,54 @@
         <section id="requests" class="view-section">
             <div class="card">
                 <h2>Liste complète des demandes</h2>
-                <div class="filters-bar" style="margin-top: 1rem;">
-                    <div class="filters-group">
-                        <input type="text" id="searchInput" placeholder="Rechercher..." oninput="renderRequests()">
-                        <select id="filterStatus" onchange="renderRequests()">
-                            <option value="">Tous les statuts</option>
-                            <option value="en attente">En attente</option>
-                            <option value="acheté">Acheté</option>
-                            <option value="annulé">Annulé</option>
-                        </select>
-                        <select id="filterCategory" onchange="renderRequests()">
-                            <option value="">Toutes les catégories</option>
-                            <option value="Produits alimentaires">Produits alimentaires</option>
-                            <option value="Produits d'hygiène">Produits d'hygiène</option>
-                            <option value="Produits ménagers">Produits ménagers</option>
-                            <option value="Vêtements et chaussures">Vêtements et chaussures</option>
-                            <option value="Produits pour bébé">Produits pour bébé</option>
-                            <option value="Santé">Santé</option>
-                            <option value="Électroménager">Électroménager</option>
-                            <option value="Mobilier">Mobilier</option>
-                            <option value="Fournitures scolaires">Fournitures scolaires</option>
-                            <option value="Autres besoins du foyer">Autres besoins</option>
-                        </select>
-                    </div>
-                    <button class="btn btn-sm" onclick="switchView('form-view', document.querySelector('nav button:nth-child(3)'))">+ Nouveau</button>
-                </div>
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
                                 <th>Produit</th>
                                 <th>Catégorie</th>
-                                <th>Qté & Prix Est.</th>
-                                <th>Total Est.</th>
+                                <th>Qté & Prix Unitaire</th>
+                                <th>Total Réel</th>
                                 <th>Créateur / Date</th>
-                                <th>Statut / Réel</th>
+                                <th>Statut</th>
                                 <th>Actions</th>
+                            </tr>
+                            <!-- FILTRES DANS CHAQUE COLONNE DE LA LISTE DES DEMANDES -->
+                            <tr class="table-filter-row">
+                                <th><input type="text" id="reqColSearch" placeholder="Filtrer..." oninput="renderRequests()"></th>
+                                <th>
+                                    <select id="reqColCategory" onchange="renderRequests()">
+                                        <option value="">Toutes</option>
+                                        <option value="Produits alimentaires">Alimentaire</option>
+                                        <option value="Produits d'hygiène">Hygiène</option>
+                                        <option value="Produits ménagers">Ménager</option>
+                                        <option value="Vêtements et chaussures">Vêtements</option>
+                                        <option value="Produits pour bébé">Bébé</option>
+                                        <option value="Santé">Santé</option>
+                                        <option value="Électroménager">Électroménager</option>
+                                        <option value="Mobilier">Mobilier</option>
+                                        <option value="Fournitures scolaires">Scolaire</option>
+                                        <option value="Autres besoins du foyer">Autres</option>
+                                    </select>
+                                </th>
+                                <th>-</th>
+                                <th>-</th>
+                                <th>
+                                    <select id="reqColCreator" onchange="renderRequests()">
+                                        <option value="">Tous</option>
+                                        <option value="Femme">Femme</option>
+                                        <option value="Homme">Homme</option>
+                                    </select>
+                                </th>
+                                <th>
+                                    <select id="reqColStatus" onchange="renderRequests()">
+                                        <option value="">Tous</option>
+                                        <option value="en attente">En attente</option>
+                                        <option value="acheté">Acheté</option>
+                                        <option value="annulé">Annulé</option>
+                                    </select>
+                                </th>
+                                <th><button class="btn btn-sm" onclick="switchView('form-view', document.querySelector('nav button:nth-child(3)'))">+ Nouveau</button></th>
                             </tr>
                         </thead>
                         <tbody id="requests-tbody"></tbody>
@@ -252,15 +295,11 @@
                         </div>
                         <div class="form-group">
                             <label for="quantity">Quantité *</label>
-                            <input type="number" id="quantity" min="1" value="1" required oninput="calculateEstimatedTotal()">
+                            <input type="number" id="quantity" min="1" value="1" required>
                         </div>
                         <div class="form-group">
-                            <label for="unitPrice">Prix unitaire estimé (DZD) *</label>
-                            <input type="number" id="unitPrice" min="0" step="5.00" value="0" required oninput="calculateEstimatedTotal()" placeholder="0.00">
-                        </div>
-                        <div class="form-group">
-                            <label for="totalEstimatedDisplay">Total estimé</label>
-                            <input type="text" id="totalEstimatedDisplay" readonly value="0.00 DZD" style="background-color: var(--primary-light); font-weight: bold;">
+                            <label for="unitPrice">Prix unitaire indicatif (DZD) *</label>
+                            <input type="number" id="unitPrice" min="0" step="5.00" value="0" required placeholder="0.00">
                         </div>
                         <div class="form-group">
                             <label for="priority">Priorité</label>
@@ -308,11 +347,11 @@
                 </div>
             </div>
             <div class="card">
-                <h2>Répartition par Catégorie</h2>
+                <h2>Dépenses Réelles par Catégorie</h2>
                 <div class="table-responsive">
                     <table>
                         <thead>
-                            <tr><th>Catégorie</th><th>Articles</th><th>Total Estimé</th><th>Total Réel</th></tr>
+                            <tr><th>Catégorie</th><th>Articles Achetés</th><th>Total Réel Dépensé</th></tr>
                         </thead>
                         <tbody id="category-budget-tbody"></tbody>
                     </table>
@@ -390,18 +429,29 @@
             loadFromLocalStorage();
             initFirebaseIfAvailable();
             initTheme();
+            resetFormDateToToday();
             renderAll();
         });
+
+        // MODIFICATION 4 : Remplir la date par défaut avec aujourd'hui
+        function resetFormDateToToday() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('desiredDate').value = today;
+        }
 
         function loadFromLocalStorage() {
             const saved = localStorage.getItem('nos_besoins_state');
             if (saved) {
-                try { state = JSON.parse(saved); } catch (e) { console.error(e); }
+                try { 
+                    state = JSON.parse(saved); 
+                    // Conversion de l'ancien profil 'Mari' vers 'Homme'
+                    if (state.currentUser === 'Mari') state.currentUser = 'Homme';
+                } catch (e) { console.error(e); }
             } else {
                 state.requests = [{
                     id: 'req-1', productName: 'Lait', category: 'Produits alimentaires',
-                    quantity: 2, unitPrice: 750, totalEstimated: 1500, priority: 'Haute',
-                    desiredDate: '2026-10-20', description: '', creator: 'Femme',
+                    quantity: 2, unitPrice: 750, priority: 'Haute',
+                    desiredDate: new Date().toISOString().split('T')[0], description: '', creator: 'Femme',
                     status: 'en attente', actualUnitPrice: 0, actualQty: 0, actualTotal: 0, purchaseDate: null
                 }];
                 saveToLocalStorage();
@@ -453,12 +503,13 @@
             if ("Notification" in window) Notification.requestPermission().then(p => { if (p === "granted") showToast('Notifications activées'); });
         }
 
+        // MODIFICATION 5 : Profil Homme
         function switchProfile(profile) {
             state.currentUser = profile;
             initTheme();
             saveToLocalStorage();
             renderAll();
-            showToast(`Mode: ${profile}`);
+            showToast(`Mode : ${profile}`);
         }
 
         function initTheme() {
@@ -476,12 +527,6 @@
             if (viewId === 'form-view' && !document.getElementById('editId').value) resetForm();
         }
 
-        function calculateEstimatedTotal() {
-            const qty = parseFloat(document.getElementById('quantity').value) || 0;
-            const price = parseFloat(document.getElementById('unitPrice').value) || 0;
-            document.getElementById('totalEstimatedDisplay').value = (qty * price).toLocaleString('fr-FR') + ' DZD';
-        }
-
         function updateSuggestionsDatalist() {
             const datalist = document.getElementById('suggestionsList');
             datalist.innerHTML = '';
@@ -497,22 +542,21 @@
             const quantity = parseFloat(document.getElementById('quantity').value);
             const unitPrice = parseFloat(document.getElementById('unitPrice').value);
             const priority = document.getElementById('priority').value;
-            const desiredDate = document.getElementById('desiredDate').value;
+            const desiredDate = document.getElementById('desiredDate').value || new Date().toISOString().split('T')[0];
             const description = document.getElementById('description').value.trim();
-            const totalEstimated = quantity * unitPrice;
 
             if (editId) {
                 const req = state.requests.find(r => r.id === editId);
                 if (req) {
                     req.productName = productName; req.category = category; req.quantity = quantity;
-                    req.unitPrice = unitPrice; req.totalEstimated = totalEstimated; req.priority = priority;
+                    req.unitPrice = unitPrice; req.priority = priority;
                     req.desiredDate = desiredDate; req.description = description;
                     showToast('Besoin mis à jour');
                 }
             } else {
                 state.requests.unshift({
                     id: 'req-' + Date.now(), productName, category, quantity, unitPrice,
-                    totalEstimated, priority, desiredDate, description, creator: state.currentUser,
+                    priority, desiredDate, description, creator: state.currentUser,
                     status: 'en attente', actualUnitPrice: 0, actualQty: 0, actualTotal: 0, purchaseDate: null
                 });
                 showToast('Besoin ajouté');
@@ -534,11 +578,10 @@
             document.getElementById('quantity').value = req.quantity;
             document.getElementById('unitPrice').value = req.unitPrice;
             document.getElementById('priority').value = req.priority;
-            document.getElementById('desiredDate').value = req.desiredDate || '';
+            document.getElementById('desiredDate').value = req.desiredDate || new Date().toISOString().split('T')[0];
             document.getElementById('description').value = req.description || '';
             document.getElementById('form-title').innerText = 'Modifier le besoin';
             document.getElementById('submitFormBtn').innerText = 'Mettre à jour';
-            calculateEstimatedTotal();
             switchView('form-view', document.querySelector('nav button:nth-child(3)'));
         }
 
@@ -548,7 +591,7 @@
             document.getElementById('form-title').innerText = 'Ajouter un nouveau besoin';
             document.getElementById('submitFormBtn').innerText = 'Enregistrer';
             document.getElementById('quantity').value = 1;
-            calculateEstimatedTotal();
+            resetFormDateToToday();
             updateSuggestionsDatalist();
         }
 
@@ -605,74 +648,86 @@
             remEl.style.color = rem < 0 ? 'var(--danger)' : 'var(--success)';
 
             const summary = {};
-            DEFAULT_CATEGORIES.forEach(c => summary[c] = { count: 0, est: 0, act: 0 });
+            DEFAULT_CATEGORIES.forEach(c => summary[c] = { count: 0, act: 0 });
             state.requests.forEach(r => {
                 const c = r.category || 'Autres besoins du foyer';
-                if (!summary[c]) summary[c] = { count: 0, est: 0, act: 0 };
-                summary[c].count++;
-                if (r.status === 'en attente') summary[c].est += r.totalEstimated;
-                if (r.status === 'acheté') summary[c].act += (r.actualTotal || 0);
+                if (!summary[c]) summary[c] = { count: 0, act: 0 };
+                if (r.status === 'acheté') {
+                    summary[c].count++;
+                    summary[c].act += (r.actualTotal || 0);
+                }
             });
 
             const tbody = document.getElementById('category-budget-tbody');
             tbody.innerHTML = '';
             Object.keys(summary).forEach(c => {
                 const d = summary[c];
-                if (d.count > 0 || d.est > 0 || d.act > 0) {
-                    tbody.innerHTML += `<tr><td><strong>${c}</strong></td><td>${d.count}</td><td>${d.est.toLocaleString('fr-FR')} DZD</td><td>${d.act.toLocaleString('fr-FR')} DZD</td></tr>`;
+                if (d.act > 0) {
+                    tbody.innerHTML += `<tr><td><strong>${c}</strong></td><td>${d.count}</td><td>${d.act.toLocaleString('fr-FR')} DZD</td></tr>`;
                 }
             });
+            if (!tbody.innerHTML) tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-light)">Aucun achat réalisé.</td></tr>`;
         }
 
         function renderAll() { renderDashboard(); renderRequests(); renderBudgetSummary(); }
 
+        // MODIFICATION 2 : Tableau de bord avec Total Réel et Filtres par colonne
         function renderDashboard() {
             document.getElementById('stat-budget').innerText = state.monthlyBudget.toLocaleString('fr-FR') + ' DZD';
-            document.getElementById('stat-estimated').innerText = state.requests.filter(r => r.status === 'en attente').reduce((a, b) => a + b.totalEstimated, 0).toLocaleString('fr-FR') + ' DZD';
             document.getElementById('stat-actual').innerText = state.requests.filter(r => r.status === 'acheté').reduce((a, b) => a + (b.actualTotal || 0), 0).toLocaleString('fr-FR') + ' DZD';
             document.getElementById('stat-pending').innerText = state.requests.filter(r => r.status === 'en attente').length;
 
-            const search = (document.getElementById('dashSearchInput').value || '').toLowerCase();
-            const status = document.getElementById('dashFilterStatus').value;
-            const category = document.getElementById('dashFilterCategory').value;
+            const search = (document.getElementById('dashColSearch').value || '').toLowerCase();
+            const category = document.getElementById('dashColCategory').value;
+            const creator = document.getElementById('dashColCreator').value;
+            const priority = document.getElementById('dashColPriority').value;
+            const status = document.getElementById('dashColStatus').value;
 
             const filtered = state.requests.filter(r => {
                 return (r.productName.toLowerCase().includes(search)) &&
-                       (!status || r.status === status) &&
-                       (!category || r.category === category);
+                       (!category || r.category === category) &&
+                       (!creator || r.creator === creator) &&
+                       (!priority || r.priority === priority) &&
+                       (!status || r.status === status);
             });
 
             const tbody = document.getElementById('recent-tbody');
             tbody.innerHTML = filtered.length ? '' : `<tr><td colspan="6" style="text-align: center; color: var(--text-light);">Aucun produit</td></tr>`;
             filtered.forEach(r => {
+                const realTotalDisplay = r.status === 'acheté' ? `${(r.actualTotal || 0).toLocaleString('fr-FR')} DZD` : '-';
                 tbody.innerHTML += `<tr>
                     <td><strong>${r.productName}</strong></td>
                     <td><span class="badge badge-category">${r.category}</span></td>
                     <td><span class="badge badge-creator">${r.creator}</span></td>
                     <td><span class="badge badge-priority-${r.priority.toLowerCase()}">${r.priority}</span></td>
-                    <td>${r.totalEstimated.toLocaleString('fr-FR')} DZD</td>
+                    <td><strong>${realTotalDisplay}</strong></td>
                     <td><span class="badge badge-${r.status === 'acheté' ? 'purchased' : (r.status === 'annulé' ? 'cancelled' : 'pending')}">${r.status}</span></td>
                 </tr>`;
             });
         }
 
+        // MODIFICATION 3 : Liste des demandes avec Prix/Total Réel et Filtres par colonne
         function renderRequests() {
-            const search = (document.getElementById('searchInput').value || '').toLowerCase();
-            const status = document.getElementById('filterStatus').value;
-            const category = document.getElementById('filterCategory').value;
+            const search = (document.getElementById('reqColSearch').value || '').toLowerCase();
+            const category = document.getElementById('reqColCategory').value;
+            const creator = document.getElementById('reqColCreator').value;
+            const status = document.getElementById('reqColStatus').value;
 
             const filtered = state.requests.filter(r => {
                 return (r.productName.toLowerCase().includes(search)) &&
-                       (!status || r.status === status) &&
-                       (!category || r.category === category);
+                       (!category || r.category === category) &&
+                       (!creator || r.creator === creator) &&
+                       (!status || r.status === status);
             });
 
             const tbody = document.getElementById('requests-tbody');
             tbody.innerHTML = filtered.length ? '' : `<tr><td colspan="7" style="text-align: center; color: var(--text-light);">Aucune demande</td></tr>`;
             
             filtered.forEach(r => {
-                let statusHtml = `<span class="badge badge-${r.status === 'acheté' ? 'purchased' : (r.status === 'annulé' ? 'cancelled' : 'pending')}">${r.status}</span>`;
-                if (r.status === 'acheté') statusHtml += `<br><small style="color:var(--success)">Réel: ${r.actualTotal.toLocaleString('fr-FR')} DZD</small>`;
+                const isPurchased = r.status === 'acheté';
+                const qtyDisplay = isPurchased ? (r.actualQty || r.quantity) : r.quantity;
+                const unitPriceDisplay = isPurchased ? (r.actualUnitPrice || r.unitPrice) : r.unitPrice;
+                const realTotalDisplay = isPurchased ? `${(r.actualTotal || 0).toLocaleString('fr-FR')} DZD` : 'En attente';
 
                 let actions = `<div style="display:flex; gap:0.5rem; flex-wrap:wrap;">`;
                 if (r.status === 'en attente') {
@@ -688,12 +743,12 @@
                 actions += `</div>`;
 
                 tbody.innerHTML += `<tr>
-                    <td><strong>${r.productName}</strong><br><small>${r.description || ''}</small></td>
+                    <td><strong>${r.productName}</strong><br><small style="color:var(--text-light)">${r.description || ''}</small></td>
                     <td><span class="badge badge-category">${r.category}</span></td>
-                    <td>Qté: ${r.quantity} | ${r.unitPrice.toLocaleString('fr-FR')} DZD</td>
-                    <td><strong>${r.totalEstimated.toLocaleString('fr-FR')} DZD</strong></td>
+                    <td>Qté: ${qtyDisplay} | ${unitPriceDisplay.toLocaleString('fr-FR')} DZD</td>
+                    <td><strong style="color: ${isPurchased ? 'var(--success)' : 'inherit'};">${realTotalDisplay}</strong></td>
                     <td><span class="badge badge-creator">${r.creator}</span><br><small>${r.desiredDate || ''}</small></td>
-                    <td>${statusHtml}</td>
+                    <td><span class="badge badge-${isPurchased ? 'purchased' : (r.status === 'annulé' ? 'cancelled' : 'pending')}">${r.status}</span></td>
                     <td>${actions}</td>
                 </tr>`;
             });
