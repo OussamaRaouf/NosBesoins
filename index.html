@@ -27,7 +27,7 @@
             --success: #059669;
             --danger: #dc2626;
         }
-        [data-theme="mari"] {
+        [data-theme="homme"] {
             --primary: #2563eb;
             --primary-light: #eff6ff;
             --primary-dark: #1d4ed8;
@@ -106,10 +106,10 @@
             <h1>Nos Besoins</h1>
         </div>
         <div class="user-switcher">
-            <label for="profileSelect">Mode :</label>
+            <label for="profileSelect">Mode:</label>
             <select id="profileSelect" onchange="switchProfile(this.value)">
                 <option value="Femme">👩 Femme</option>
-                <option value="Mari">👨 Mari</option>
+                <option value="Homme">👨 Homme</option>
             </select>
         </div>
     </header>
@@ -256,7 +256,7 @@
                         </div>
                         <div class="form-group">
                             <label for="unitPrice">Prix unitaire estimé (DZD) *</label>
-                            <input type="number" id="unitPrice" min="0" step="0.01" required oninput="calculateEstimatedTotal()" placeholder="0.00">
+                            <input type="number" id="unitPrice" min="0" step="5.00" value="0" required oninput="calculateEstimatedTotal()" placeholder="0.00">
                         </div>
                         <div class="form-group">
                             <label for="totalEstimatedDisplay">Total estimé</label>
@@ -359,7 +359,7 @@
                 </div>
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <label for="correctActualPrice">Prix unitaire payé (DZD)</label>
-                    <input type="number" id="correctActualPrice" min="0" step="0.01" required oninput="calculateModalTotal()">
+                    <input type="number" id="correctActualPrice" min="0" step="5.00" required oninput="calculateModalTotal()">
                 </div>
                 <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label>Total réel : <span id="modalTotalCalculated" style="font-weight: bold;">0.00 DZD</span></label>
@@ -458,11 +458,11 @@
             initTheme();
             saveToLocalStorage();
             renderAll();
-            showToast(`Mode : ${profile}`);
+            showToast(`Mode: ${profile}`);
         }
 
         function initTheme() {
-            document.body.setAttribute('data-theme', state.currentUser === 'Mari' ? 'mari' : 'femme');
+            document.body.setAttribute('data-theme', state.currentUser === 'Homme' ? 'homme' : 'femme');
         }
 
         function switchView(viewId, btn) {
@@ -525,7 +525,7 @@
         function editRequest(id) {
             const req = state.requests.find(r => r.id === id);
             if (!req) return;
-            if (req.status === 'acheté' && state.currentUser !== 'Mari') {
+            if (req.status === 'acheté' && state.currentUser !== 'Homme') {
                 showToast('Impossible de modifier un besoin déjà acheté', 'error'); return;
             }
             document.getElementById('editId').value = req.id;
@@ -680,7 +680,7 @@
                     actions += `<button class="btn btn-sm btn-secondary" onclick="editRequest('${r.id}')">Modifier</button>`;
                     actions += `<button class="btn btn-sm btn-danger" onclick="markAsCancelled('${r.id}')">Annuler</button>`;
                 } else if (r.status === 'acheté') {
-                    if (state.currentUser === 'Mari') actions += `<button class="btn btn-sm" onclick="openPriceModal('${r.id}', false)">Corriger</button>`;
+                    if (state.currentUser === 'Homme') actions += `<button class="btn btn-sm" onclick="openPriceModal('${r.id}', false)">Corriger</button>`;
                     actions += `<span style="font-size:0.85rem; color:var(--text-light)">Verrouillé</span>`;
                 } else {
                     actions += `<button class="btn btn-sm btn-danger" onclick="deleteRequest('${r.id}')">Supprimer</button>`;
