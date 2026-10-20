@@ -1,772 +1,402 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="femme">
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nos Besoins - Gestion Familiale</title>
-
-    <!-- PWA & Mobile Icons -->
-    <meta name="theme-color" content="#db2777">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Nos Besoins">
-    
-    <!-- Scripts Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
-    <style>
-        :root {
-            --transition: all 0.3s ease;
-            --radius: 12px;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        [data-theme="femme"] {
-            --primary: #db2777;
-            --primary-light: #fce7f3;
-            --primary-dark: #be185d;
-            --bg: #fff1f2;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --text-light: #6b7280;
-            --border: #fbcfe8;
-            --success: #059669;
-            --danger: #dc2626;
-        }
-        [data-theme="homme"] {
-            --primary: #2563eb;
-            --primary-light: #eff6ff;
-            --primary-dark: #1d4ed8;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text: #1e293b;
-            --text-light: #64748b;
-            --border: #cbd5e1;
-            --success: #16a34a;
-            --danger: #ef4444;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
-        header { background-color: var(--card-bg); border-bottom: 2px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100; }
-        .logo-area { display: flex; align-items: center; gap: 0.75rem; }
-        .logo-icon { background-color: var(--primary); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: bold; }
-        .logo-area h1 { font-size: 1.5rem; color: var(--primary-dark); }
-        .user-switcher { display: flex; align-items: center; gap: 1rem; background: var(--bg); padding: 0.5rem 1rem; border-radius: var(--radius); border: 1px solid var(--border); }
-        .user-switcher select { background: transparent; border: none; font-weight: 600; color: var(--text); font-size: 1rem; cursor: pointer; outline: none; }
-        nav { background-color: var(--card-bg); display: flex; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); overflow-x: auto; }
-        .nav-btn { background: none; border: none; padding: 0.5rem 1rem; border-radius: var(--radius); font-weight: 600; color: var(--text-light); cursor: pointer; transition: var(--transition); white-space: nowrap; }
-        .nav-btn:hover { background-color: var(--primary-light); color: var(--primary); }
-        .nav-btn.active { background-color: var(--primary); color: white; }
-        main { flex: 1; max-width: 1200px; width: 100%; margin: 0 auto; padding: 2rem 1rem; }
-        .view-section { display: none; }
-        .view-section.active { display: block; }
-        .card { background-color: var(--card-bg); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 1.5rem; }
-        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .stat-card { background-color: var(--card-bg); border-left: 5px solid var(--primary); padding: 1.25rem; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); }
-        .stat-card h3 { font-size: 0.85rem; color: var(--text-light); text-transform: uppercase; margin-bottom: 0.5rem; }
-        .stat-card .value { font-size: 1.75rem; font-weight: bold; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
-        .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
-        .form-group.full-width { grid-column: 1 / -1; }
-        label { font-weight: 600; font-size: 0.9rem; }
-        input, select, textarea { padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 1rem; background-color: var(--card-bg); color: var(--text); }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
-        .btn { background-color: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: var(--radius); font-weight: 600; cursor: pointer; transition: var(--transition); display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
-        .btn:hover { background-color: var(--primary-dark); }
-        .btn-secondary { background-color: var(--text-light); color: white; }
-        .btn-danger { background-color: var(--danger); color: white; }
-        .btn-success { background-color: var(--success); color: white; }
-        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
-        .table-responsive { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 1rem; }
-        th, td { padding: 0.8rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-        th { background-color: var(--primary-light); color: var(--primary-dark); font-weight: 600; }
-        .badge { padding: 0.35rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: bold; display: inline-block; }
-        .badge-pending { background-color: #fef3c7; color: #b45309; }
-        .badge-purchased { background-color: #d1fae5; color: #065f46; }
-        .badge-cancelled { background-color: #fee2e2; color: #991b1b; }
-        .badge-priority-haute { background-color: #fee2e2; color: #991b1b; }
-        .badge-priority-moyenne { background-color: #fef3c7; color: #b45309; }
-        .badge-priority-basse { background-color: #e0f2fe; color: #0369a1; }
-        .badge-creator { background-color: var(--primary-light); color: var(--primary-dark); border: 1px solid var(--border); }
-        .badge-category { background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
-        
-        .table-filter-row input, .table-filter-row select {
-            width: 100%;
-            padding: 0.4rem;
-            font-size: 0.8rem;
-            border-radius: 6px;
-        }
-
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: var(--transition); }
-        .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        .modal { background-color: var(--card-bg); border-radius: var(--radius); padding: 2rem; width: 100%; max-width: 500px; box-shadow: var(--shadow); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light); }
-        #toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 1100; display: flex; flex-direction: column; gap: 0.75rem; }
-        .toast { background-color: var(--card-bg); color: var(--text); padding: 1rem 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow); border-left: 5px solid var(--primary); font-weight: 600; }
-        .sync-banner { background-color: #fef3c7; color: #b45309; padding: 0.5rem 1rem; text-align: center; font-size: 0.85rem; font-weight: bold; border-bottom: 1px solid var(--border); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#db2777" id="themeMeta">
+<title>Nos Besoins</title>
+<style>
+/* ===== Thèmes : variables changées selon le profil actif ===== */
+:root{--p:#db2777;--pd:#9d174d;--pl:#fce7f3;--bg:#fdf6fa;--tx:#1f2430;--mu:#6b7280;--bd:#e7dce3;--ok:#15803d;--ko:#b91c1c;--card:#fff}
+body[data-p="homme"]{--p:#2563eb;--pd:#1e3a8a;--pl:#e0e9fb;--bg:#f3f5f9;--bd:#d9dee8}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);transition:background .3s;padding-bottom:env(safe-area-inset-bottom)}
+header{background:var(--p);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;transition:background .3s}
+.brand{display:flex;align-items:center;gap:8px;font-size:1.25rem;font-weight:700}
+.seg{display:flex;background:rgba(255,255,255,.2);border-radius:999px;padding:3px}
+.seg button{border:0;background:none;color:#fff;padding:6px 14px;border-radius:999px;font:inherit;cursor:pointer}
+.seg button.on{background:#fff;color:var(--p);font-weight:700}
+#banner{font-size:.82rem;padding:5px 14px;background:var(--pl);color:var(--pd)}
+#banner.live{background:#dcfce7;color:var(--ok)}
+nav{display:flex;overflow-x:auto;background:var(--card);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:5}
+nav button{flex:0 0 auto;border:0;background:none;padding:12px 14px;font:inherit;color:var(--mu);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav button.on{color:var(--p);border-color:var(--p);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:14px}
+section{display:none}section.on{display:block;animation:in .25s}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px}
+.stat b{display:block;font-size:1.45rem;color:var(--p)}.stat span{color:var(--mu);font-size:.85rem}
+.tw{overflow-x:auto;background:var(--card);border:1px solid var(--bd);border-radius:12px}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th,td{padding:8px 10px;text-align:left;vertical-align:top;border-bottom:1px solid var(--bd)}
+th{background:var(--pl);color:var(--pd);font-size:.85rem}
+th input,th select{width:100%;margin-top:4px;padding:4px;font-size:.8rem;border:1px solid var(--bd);border-radius:6px;background:#fff}
+.thumb{width:44px;height:44px;object-fit:cover;border-radius:8px;cursor:zoom-in;float:left;margin-right:8px}
+small{color:var(--mu)}
+.b{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.75rem;font-weight:600}
+.haute{background:#fee2e2;color:#b91c1c}.moyenne{background:#fef3c7;color:#92400e}.basse{background:#dcfce7;color:#166534}
+.attente{background:#fef3c7;color:#92400e}.achete{background:#dcfce7;color:#166534}.annule{background:#e5e7eb;color:#4b5563}
+button.a{border:1px solid var(--p);background:#fff;color:var(--p);border-radius:8px;padding:4px 9px;margin:2px;font:inherit;font-size:.8rem;cursor:pointer}
+button.a.f{background:var(--p);color:#fff}button.a.d{border-color:var(--ko);color:var(--ko)}
+label{display:block;font-weight:600;margin:10px 0 3px;font-size:.88rem}
+input,select,textarea{width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;font:inherit;background:#fff}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--p);outline-offset:1px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.btn{background:var(--p);color:#fff;border:0;border-radius:10px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer;margin:10px 6px 0 0}
+.btn.s{background:#fff;color:var(--p);border:1px solid var(--p)}.btn.d{background:var(--ko)}
+#prev{max-width:140px;max-height:140px;border-radius:10px;margin-top:6px;display:none}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:20;padding:14px}
+.modal.on{display:flex}.modal .card{max-width:420px;width:100%}
+#zoomImg{max-width:100%;max-height:80vh;border-radius:10px;display:block;margin:auto}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,30px);background:#111827;color:#fff;padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:.3s;z-index:30;max-width:90%}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+.pos{color:var(--ok);font-weight:700}.neg{color:var(--ko);font-weight:700}
+.empty{padding:22px;text-align:center;color:var(--mu)}
+</style>
 </head>
-<body data-theme="femme">
+<body data-p="femme">
 
-    <div class="sync-banner" id="syncBanner">🔄 Mode Local. Configurez Firebase dans l'onglet "Données & Synchronisation".</div>
+<header>
+  <div class="brand">
+    <!-- Logo SVG intégré (liste cochée dans un foyer) -->
+    <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 15 16 4l12 11v13H4z" fill="#fff"/><path d="M10 18l4 4 8-8" stroke="var(--p)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Nos Besoins
+  </div>
+  <div class="seg" role="group" aria-label="Profil">
+    <button id="pf" onclick="setProfile('femme')">👩 Femme</button>
+    <button id="ph" onclick="setProfile('homme')">👨 Homme</button>
+  </div>
+</header>
+<div id="banner">📴 Mode local — aucune synchronisation</div>
+<nav id="tabs"></nav>
 
-    <header>
-        <div class="logo-area">
-            <div class="logo-icon">NB</div>
-            <h1>Nos Besoins</h1>
-        </div>
-        <div class="user-switcher">
-            <label for="profileSelect">Mode :</label>
-            <select id="profileSelect" onchange="switchProfile(this.value)">
-                <option value="Femme">👩 Femme</option>
-                <option value="Homme">👨 Homme</option>
-            </select>
-        </div>
-    </header>
+<main>
+<!-- ===== Tableau de bord ===== -->
+<section id="s-dash">
+  <div class="stats">
+    <div class="card stat"><b id="stBud">0</b><span>Budget global</span></div>
+    <div class="card stat"><b id="stSpent">0</b><span>Total réel dépensé</span></div>
+    <div class="card stat"><b id="stPend">0</b><span>Demandes en attente</span></div>
+  </div>
+  <h3>Activité récente</h3>
+  <div class="tw"><table>
+    <thead id="hDash"></thead><tbody id="bDash"></tbody>
+  </table></div>
+</section>
 
-    <nav>
-        <button class="nav-btn active" onclick="switchView('dashboard', this)">Tableau de bord</button>
-        <button class="nav-btn" onclick="switchView('requests', this)">Liste des demandes</button>
-        <button class="nav-btn" onclick="switchView('form-view', this)">Ajouter un besoin</button>
-        <button class="nav-btn" onclick="switchView('budget', this)">Gestion du budget</button>
-        <button class="nav-btn" onclick="switchView('data-view', this)">Données & Synchronisation</button>
-    </nav>
+<!-- ===== Liste des demandes ===== -->
+<section id="s-list">
+  <div class="tw"><table style="min-width:820px">
+    <thead id="hList"></thead><tbody id="bList"></tbody>
+  </table></div>
+</section>
 
-    <main>
-        <!-- TABLEAU DE BORD -->
-        <section id="dashboard" class="view-section active">
-            <div class="grid-stats">
-                <div class="stat-card"><h3>Budget Global</h3><div class="value" id="stat-budget">0 DZD</div></div>
-                <div class="stat-card"><h3>Total Réel Dépensé</h3><div class="value" id="stat-actual">0 DZD</div></div>
-                <div class="stat-card"><h3>Demandes en attente</h3><div class="value" id="stat-pending">0</div></div>
-            </div>
-            <div class="card">
-                <h2>Aperçu rapide & Activité récente</h2>
-                
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Produit</th>
-                                <th>Catégorie</th>
-                                <th>Créateur</th>
-                                <th>Priorité</th>
-                                <th>Total Réel</th>
-                                <th>Statut</th>
-                            </tr>
-                            <!-- FILTRES DANS CHAQUE COLONNE DU TABLEAU DE BORD -->
-                            <tr class="table-filter-row">
-                                <th><input type="text" id="dashColSearch" placeholder="Filtrer..." oninput="renderDashboard()"></th>
-                                <th>
-                                    <select id="dashColCategory" onchange="renderDashboard()">
-                                        <option value="">Toutes</option>
-                                        <option value="Produits alimentaires">Alimentaire</option>
-                                        <option value="Produits d'hygiène">Hygiène</option>
-                                        <option value="Produits ménagers">Ménager</option>
-                                        <option value="Vêtements et chaussures">Vêtements</option>
-                                        <option value="Produits pour bébé">Bébé</option>
-                                        <option value="Santé">Santé</option>
-                                        <option value="Électroménager">Électroménager</option>
-                                        <option value="Mobilier">Mobilier</option>
-                                        <option value="Fournitures scolaires">Scolaire</option>
-                                        <option value="Autres besoins du foyer">Autres</option>
-                                    </select>
-                                </th>
-                                <th>
-                                    <select id="dashColCreator" onchange="renderDashboard()">
-                                        <option value="">Tous</option>
-                                        <option value="Femme">Femme</option>
-                                        <option value="Homme">Homme</option>
-                                    </select>
-                                </th>
-                                <th>
-                                    <select id="dashColPriority" onchange="renderDashboard()">
-                                        <option value="">Toutes</option>
-                                        <option value="Haute">Haute</option>
-                                        <option value="Moyenne">Moyenne</option>
-                                        <option value="Basse">Basse</option>
-                                    </select>
-                                </th>
-                                <th>-</th>
-                                <th>
-                                    <select id="dashColStatus" onchange="renderDashboard()">
-                                        <option value="">Tous</option>
-                                        <option value="en attente">En attente</option>
-                                        <option value="acheté">Acheté</option>
-                                        <option value="annulé">Annulé</option>
-                                    </select>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody id="recent-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+<!-- ===== Ajouter / Modifier ===== -->
+<section id="s-add"><div class="card">
+  <h3 id="formTitle">Ajouter un besoin</h3>
+  <label for="fName">Nom du produit *</label>
+  <input id="fName" list="sugg" autocomplete="off" placeholder="Ex. Couches, Lait, Savon…">
+  <datalist id="sugg"></datalist>
+  <div class="row">
+    <div><label for="fQty">Quantité *</label><input id="fQty" type="number" min="1" value="1" inputmode="numeric"></div>
+    <div><label for="fPrice">Prix unitaire indicatif (DZD) *</label><input id="fPrice" type="number" min="0" step="5" value="1" inputmode="decimal"></div>
+    <div><label for="fDate">Date souhaitée</label><input id="fDate" type="date"></div>
+  </div>
+  <div class="row">
+    <div><label for="fCat">Catégorie</label><select id="fCat"></select></div>
+    <div><label for="fPrio">Priorité</label><select id="fPrio"><option>Moyenne</option><option>Haute</option><option>Basse</option></select></div>
+  </div>
+  <label for="fDesc">Description</label><textarea id="fDesc" rows="2"></textarea>
+  <label for="fPhoto">Photo</label>
+  <input id="fPhoto" type="file" accept="image/*">
+  <img id="prev" alt="Aperçu">
+  <button class="a d" id="rmPhoto" style="display:none" onclick="clearPhoto()">Supprimer la photo</button>
+  <div><button class="btn" onclick="saveItem()" id="saveBtn">Enregistrer le besoin</button><button class="btn s" onclick="resetForm()">Vider le formulaire</button></div>
+</div></section>
 
-        <!-- LISTE DES DEMANDES -->
-        <section id="requests" class="view-section">
-            <div class="card">
-                <h2>Liste complète des demandes</h2>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Produit</th>
-                                <th>Catégorie</th>
-                                <th>Qté & Prix Unitaire</th>
-                                <th>Total Réel</th>
-                                <th>Créateur / Date</th>
-                                <th>Statut</th>
-                                <th>Actions</th>
-                            </tr>
-                            <!-- FILTRES DANS CHAQUE COLONNE DE LA LISTE DES DEMANDES -->
-                            <tr class="table-filter-row">
-                                <th><input type="text" id="reqColSearch" placeholder="Filtrer..." oninput="renderRequests()"></th>
-                                <th>
-                                    <select id="reqColCategory" onchange="renderRequests()">
-                                        <option value="">Toutes</option>
-                                        <option value="Produits alimentaires">Alimentaire</option>
-                                        <option value="Produits d'hygiène">Hygiène</option>
-                                        <option value="Produits ménagers">Ménager</option>
-                                        <option value="Vêtements et chaussures">Vêtements</option>
-                                        <option value="Produits pour bébé">Bébé</option>
-                                        <option value="Santé">Santé</option>
-                                        <option value="Électroménager">Électroménager</option>
-                                        <option value="Mobilier">Mobilier</option>
-                                        <option value="Fournitures scolaires">Scolaire</option>
-                                        <option value="Autres besoins du foyer">Autres</option>
-                                    </select>
-                                </th>
-                                <th>-</th>
-                                <th>-</th>
-                                <th>
-                                    <select id="reqColCreator" onchange="renderRequests()">
-                                        <option value="">Tous</option>
-                                        <option value="Femme">Femme</option>
-                                        <option value="Homme">Homme</option>
-                                    </select>
-                                </th>
-                                <th>
-                                    <select id="reqColStatus" onchange="renderRequests()">
-                                        <option value="">Tous</option>
-                                        <option value="en attente">En attente</option>
-                                        <option value="acheté">Acheté</option>
-                                        <option value="annulé">Annulé</option>
-                                    </select>
-                                </th>
-                                <th><button class="btn btn-sm" onclick="switchView('form-view', document.querySelector('nav button:nth-child(3)'))">+ Nouveau</button></th>
-                            </tr>
-                        </thead>
-                        <tbody id="requests-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+<!-- ===== Budget ===== -->
+<section id="s-bud">
+  <div class="card">
+    <label for="bIn">Budget mensuel global (DZD)</label>
+    <input id="bIn" type="number" min="0" inputmode="decimal">
+    <button class="btn" onclick="saveBudget()">Enregistrer le budget</button>
+  </div>
+  <div class="stats" style="margin-top:14px">
+    <div class="card stat"><b id="bBud">0</b><span>Budget défini</span></div>
+    <div class="card stat"><b id="bSp">0</b><span>Total réel dépensé</span></div>
+    <div class="card stat"><b id="bRest">0</b><span>Reste disponible</span></div>
+  </div>
+  <h3>Dépenses réelles par catégorie</h3>
+  <div class="tw"><table style="min-width:300px"><thead><tr><th>Catégorie</th><th>Achats</th><th>Total réel</th></tr></thead><tbody id="bCat"></tbody></table></div>
+</section>
 
-        <!-- FORMULAIRES -->
-        <section id="form-view" class="view-section">
-            <div class="card">
-                <h2 id="form-title">Ajouter un nouveau besoin</h2>
-                <form id="needForm" onsubmit="handleFormSubmit(event)" style="margin-top: 1.5rem;">
-                    <input type="hidden" id="editId">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="productName">Nom du produit *</label>
-                            <input type="text" id="productName" list="suggestionsList" required placeholder="Ex: Lait">
-                            <datalist id="suggestionsList"></datalist>
-                        </div>
-                        <div class="form-group">
-                            <label for="category">Catégorie</label>
-                            <select id="category">
-                                <option value="Produits alimentaires">Produits alimentaires</option>
-                                <option value="Produits d'hygiène">Produits d'hygiène</option>
-                                <option value="Produits ménagers">Produits ménagers</option>
-                                <option value="Vêtements et chaussures">Vêtements et chaussures</option>
-                                <option value="Produits pour bébé">Produits pour bébé</option>
-                                <option value="Santé">Santé</option>
-                                <option value="Électroménager">Électroménager</option>
-                                <option value="Mobilier">Mobilier</option>
-                                <option value="Fournitures scolaires">Fournitures scolaires</option>
-                                <option value="Autres besoins du foyer" selected>Autres besoins du foyer</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="quantity">Quantité *</label>
-                            <input type="number" id="quantity" min="1" value="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="unitPrice">Prix unitaire indicatif (DZD) *</label>
-                            <input type="number" id="unitPrice" min="0" step="5.00" value="0" required placeholder="0.00">
-                        </div>
-                        <div class="form-group">
-                            <label for="priority">Priorité</label>
-                            <select id="priority">
-                                <option value="Basse">Basse</option>
-                                <option value="Moyenne" selected>Moyenne</option>
-                                <option value="Haute">Haute</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="desiredDate">Date souhaitée</label>
-                            <input type="date" id="desiredDate">
-                        </div>
-                        <div class="form-group full-width">
-                            <label for="description">Description</label>
-                            <textarea id="description" rows="3"></textarea>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                        <button type="button" class="btn btn-secondary" onclick="switchView('requests', document.querySelector('nav button:nth-child(2)'))">Annuler</button>
-                        <button type="submit" class="btn" id="submitFormBtn">Enregistrer</button>
-                    </div>
-                </form>
-            </div>
-        </section>
+<!-- ===== Données & synchronisation ===== -->
+<section id="s-data">
+  <div class="card">
+    <h3>Synchronisation Firebase</h3>
+    <small>Collez la configuration de votre projet (JSON contenant <code>databaseURL</code>). Les règles de la base doivent autoriser la lecture et l’écriture.</small>
+    <textarea id="fbCfg" rows="6" placeholder='{"databaseURL":"https://votre-projet-default-rtdb.firebaseio.com"}'></textarea>
+    <button class="btn" onclick="fbConnect()">Activer la synchro</button>
+    <button class="btn s" onclick="fbDisconnect()">Passer en local</button>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h3>Notifications</h3>
+    <small>Soyez alerté quand l’autre profil ajoute ou modifie un besoin.</small><br>
+    <button class="btn" onclick="askNotif()">Activer les notifications</button>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h3>Sauvegarde</h3>
+    <button class="btn" onclick="exportData()">Exporter (JSON)</button>
+    <button class="btn s" onclick="document.getElementById('imp').click()">Importer (JSON)</button>
+    <input id="imp" type="file" accept="application/json" hidden>
+    <button class="btn d" onclick="resetAll()">Tout réinitialiser</button>
+  </div>
+</section>
+</main>
 
-        <!-- BUDGET -->
-        <section id="budget" class="view-section">
-            <div class="card">
-                <h2>Configuration du Budget</h2>
-                <form id="budgetForm" onsubmit="saveBudget(event)" style="margin-top: 1.5rem; max-width: 400px;">
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label for="monthlyBudgetInput">Budget mensuel global (DZD)</label>
-                        <input type="number" id="monthlyBudgetInput" min="0" required>
-                    </div>
-                    <button type="submit" class="btn">Mettre à jour</button>
-                </form>
-            </div>
-            <div class="card">
-                <h2>Synthèse financière</h2>
-                <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
-                    <div><strong>Budget défini :</strong> <span id="summaryBudget">0</span> DZD</div>
-                    <div><strong>Total Réel Dépensé :</strong> <span id="summaryActual">0</span> DZD</div>
-                    <div><strong>Reste disponible :</strong> <span id="summaryRemaining" style="font-weight: bold;">0</span> DZD</div>
-                </div>
-            </div>
-            <div class="card">
-                <h2>Dépenses Réelles par Catégorie</h2>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr><th>Catégorie</th><th>Articles Achetés</th><th>Total Réel Dépensé</th></tr>
-                        </thead>
-                        <tbody id="category-budget-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+<!-- Modale : validation d'achat / correction -->
+<div class="modal" id="mBuy"><div class="card">
+  <h3 id="mBuyTitle">Valider l’achat</h3>
+  <label for="rQty">Quantité réelle achetée</label><input id="rQty" type="number" min="1" inputmode="numeric">
+  <label for="rPrice">Prix unitaire réel payé (DZD)</label><input id="rPrice" type="number" min="0" step="5" inputmode="decimal">
+  <p>Total réel : <b id="rTot">0 DZD</b></p>
+  <button class="btn" onclick="confirmBuy()">Confirmer</button><button class="btn s" onclick="closeM('mBuy')">Fermer</button>
+</div></div>
+<!-- Modale : zoom photo -->
+<div class="modal" id="mZoom" onclick="closeM('mZoom')"><img id="zoomImg" alt="Photo du produit"></div>
+<div id="toast" role="status"></div>
 
-        <!-- DONNÉES & SYNCHRONISATION -->
-        <section id="data-view" class="view-section">
-            <div class="card">
-                <h2>📱 Synchronisation Firebase</h2>
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="firebaseConfigInput">Configuration JSON</label>
-                    <textarea id="firebaseConfigInput" rows="5" placeholder='{"apiKey": "...", "databaseURL": "...", "projectId": "..."}'></textarea>
-                </div>
-                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                    <button class="btn" onclick="setupFirebase()">Connecter</button>
-                    <button class="btn btn-secondary" onclick="requestNotificationPermission()">🔔 Activer Notifications</button>
-                </div>
-            </div>
-            <div class="card">
-                <h2>Sauvegarde</h2>
-                <button class="btn" onclick="exportData()">📥 Exporter JSON</button>
-                <button class="btn btn-danger" onclick="confirmResetData()">Réinitialiser</button>
-            </div>
-        </section>
-    </main>
+<script>
+"use strict";
+/* ============ Constantes & état ============ */
+const KEY = "nosbesoins_v1";
+const CATS = ["Alimentation","Hygiène & soins","Bébé & enfants","Maison & ménage","Cuisine","Vêtements","Santé","Transport","Loisirs","Autre"];
+const TABS = [["dash","Tableau de bord"],["list","Liste des demandes"],["add","Ajouter un besoin"],["bud","Gestion du budget"],["data","Données & synchro"]];
+let S = { items: [], budget: 0, updated: 0, by: "" };   // état partagé (synchronisé)
+let profile = "femme", editId = null, buyId = null, photo = "", fbUrl = "", es = null;
+const F = { Dash: {}, List: {} };                        // valeurs des filtres
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = n => Math.round(n || 0).toLocaleString("fr-FR") + " DZD";
+const today = () => new Date().toLocaleDateString("sv-SE");
+const total = i => i.status === "achete" ? i.rq * i.rp : 0;
+const LBL = { attente: "En attente", achete: "Acheté", annule: "Annulé", haute: "Haute", moyenne: "Moyenne", basse: "Basse" };
+const badge = k => `<span class="b ${k}">${LBL[k]}</span>`;
 
-    <!-- MODAL PRIX -->
-    <div class="modal-overlay" id="priceModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 id="modalTitle">Validation de l'achat</h3>
-                <button class="modal-close" onclick="closePriceModal()">&times;</button>
-            </div>
-            <form id="priceCorrectionForm" onsubmit="savePriceCorrection(event)">
-                <input type="hidden" id="correctId">
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label id="modalProductName" style="color: var(--primary); font-weight: bold;"></label>
-                </div>
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="correctActualQty">Quantité réelle</label>
-                    <input type="number" id="correctActualQty" min="1" required oninput="calculateModalTotal()">
-                </div>
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="correctActualPrice">Prix unitaire payé (DZD)</label>
-                    <input type="number" id="correctActualPrice" min="0" step="5.00" required oninput="calculateModalTotal()">
-                </div>
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label>Total réel : <span id="modalTotalCalculated" style="font-weight: bold;">0.00 DZD</span></label>
-                </div>
-                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button type="button" class="btn btn-secondary" onclick="closePriceModal()">Annuler</button>
-                    <button type="submit" class="btn btn-success" id="modalSubmitBtn">Valider</button>
-                </div>
-            </form>
-        </div>
-    </div>
+/* ============ Toast ============ */
+let tt;
+function toast(m) { const t = $("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("on"), 2600); }
 
-    <div id="toast-container"></div>
+/* ============ Persistance locale (try/catch : quota 5 Mo) ============ */
+function load() {
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d) S = { items: [], budget: 0, updated: 0, by: "", ...d }; } catch (e) {}
+  try { profile = localStorage.getItem("nb_profile") || "femme"; fbUrl = localStorage.getItem("nb_fb") || ""; } catch (e) {}
+}
+function save(push = true) {
+  if (push) { S.updated = Date.now(); S.by = profile; }
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch (e) { toast("⚠️ Mémoire locale pleine : supprimez des photos ou exportez vos données."); }
+  if (push) fbPush();
+  renderAll();
+}
 
-    <script>
-        let state = { currentUser: 'Femme', monthlyBudget: 80000, requests: [] };
-        let dbRef = null;
-        let isFirebaseActive = false;
+/* ============ Profil & thème ============ */
+function setProfile(p) {
+  profile = p; try { localStorage.setItem("nb_profile", p); } catch (e) {}
+  document.body.dataset.p = p;
+  $("pf").classList.toggle("on", p === "femme"); $("ph").classList.toggle("on", p === "homme");
+  $("themeMeta").content = p === "femme" ? "#db2777" : "#2563eb";
+  renderAll();
+}
 
-        const DEFAULT_CATEGORIES = [
-            "Produits alimentaires", "Produits d'hygiène", "Produits ménagers",
-            "Vêtements et chaussures", "Produits pour bébé", "Santé",
-            "Électroménager", "Mobilier", "Fournitures scolaires", "Autres besoins du foyer"
-        ];
-        const DEFAULT_SUGGESTIONS = ["Lait", "Pain", "Œufs", "Sucre", "Café", "Huile", "Farine", "Pâtes", "Riz", "Savon", "Dentifrice", "Lessive"];
+/* ============ Navigation ============ */
+function go(id) {
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === "s-" + id));
+  [...$("tabs").children].forEach(b => b.classList.toggle("on", b.dataset.t === id));
+  if (id === "add" && !editId) resetForm();
+}
 
-        window.addEventListener('DOMContentLoaded', () => {
-            loadFromLocalStorage();
-            initFirebaseIfAvailable();
-            initTheme();
-            resetFormDateToToday();
-            renderAll();
-        });
+/* ============ Filtres intégrés aux en-têtes ============ */
+const opts = (arr, all) => `<option value="">${all}</option>` + arr.map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
+const catO = opts(CATS.map(c => [c, c]), "Toutes");
+const creO = opts([["femme", "Femme"], ["homme", "Homme"]], "Tous");
+const priO = opts([["haute", "Haute"], ["moyenne", "Moyenne"], ["basse", "Basse"]], "Toutes");
+const staO = opts([["attente", "En attente"], ["achete", "Acheté"], ["annule", "Annulé"]], "Tous");
+function th(t, ctl) { return `<th>${t}${ctl || ""}</th>`; }
+function fSel(k, n, o) { return `<select onchange="F.${k}.${n}=this.value;renderTables()">${o}</select>`; }
+function buildHeads() {
+  const txt = k => `<input placeholder="Rechercher…" oninput="F.${k}.q=this.value.toLowerCase();renderTables()">`;
+  $("hDash").innerHTML = "<tr>" + th("Produit", txt("Dash")) + th("Catégorie", fSel("Dash", "cat", catO)) + th("Créateur", fSel("Dash", "by", creO)) + th("Priorité", fSel("Dash", "prio", priO)) + th("Total réel") + th("Statut", fSel("Dash", "st", staO)) + "</tr>";
+  $("hList").innerHTML = "<tr>" + th("Produit", txt("List")) + th("Catégorie", fSel("List", "cat", catO)) + th("Qté × Prix indicatif") + th("Total réel") + th("Créateur / Date", fSel("List", "by", creO)) + th("Statut", fSel("List", "st", staO)) + th("Actions") + "</tr>";
+}
+function filt(k) {
+  const f = F[k];
+  return S.items.filter(i => (!f.q || (i.name + " " + i.desc).toLowerCase().includes(f.q)) && (!f.cat || i.cat === f.cat) && (!f.by || i.by === f.by) && (!f.prio || i.prio === f.prio) && (!f.st || i.status === f.st)).sort((a, b) => b.ts - a.ts);
+}
+const prod = i => `${i.photo ? `<img class="thumb" src="${i.photo}" alt="" onclick="zoom('${i.id}')">` : ""}<b>${esc(i.name)}</b>${i.desc ? `<br><small>${esc(i.desc)}</small>` : ""}`;
+const who = b => b === "femme" ? "👩 Femme" : "👨 Homme";
 
-        // MODIFICATION 4 : Remplir la date par défaut avec aujourd'hui
-        function resetFormDateToToday() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('desiredDate').value = today;
-        }
+/* ============ Rendus ============ */
+function renderTables() {
+  const d = filt("Dash").slice(0, 15);
+  $("bDash").innerHTML = d.length ? d.map(i => `<tr><td>${prod(i)}</td><td>${esc(i.cat)}</td><td>${who(i.by)}</td><td>${badge(i.prio)}</td><td>${i.status === "achete" ? fmt(total(i)) : "—"}</td><td>${badge(i.status)}</td></tr>`).join("") : `<tr><td colspan="6" class="empty">Aucune demande. Ajoutez votre premier besoin.</td></tr>`;
+  const l = filt("List");
+  $("bList").innerHTML = l.length ? l.map(i => {
+    let a = "";
+    if (i.status === "attente") a = `<button class="a f" onclick="openBuy('${i.id}')">✓ Acheté</button><button class="a" onclick="editItem('${i.id}')">Modifier</button><button class="a d" onclick="setStatus('${i.id}','annule')">Annuler</button>`;
+    else if (i.status === "achete") a = profile === "homme" ? `<button class="a" onclick="openBuy('${i.id}',true)">Corriger</button>` : "<small>🔒 Verrouillé</small>";
+    else a = `<button class="a d" onclick="delItem('${i.id}')">Supprimer</button>`;
+    return `<tr><td>${prod(i)}<br>${badge(i.prio)}</td><td>${esc(i.cat)}</td><td>${i.qty} × ${fmt(i.price)}</td><td>${i.status === "achete" ? `<b>${fmt(total(i))}</b><br><small>${i.rq} × ${fmt(i.rp)}</small>` : "—"}</td><td>${who(i.by)}<br><small>${esc(i.date)}</small></td><td>${badge(i.status)}</td><td>${a}</td></tr>`;
+  }).join("") : `<tr><td colspan="7" class="empty">Aucune demande ne correspond.</td></tr>`;
+}
+function renderAll() {
+  const spent = S.items.reduce((s, i) => s + total(i), 0), rest = S.budget - spent;
+  $("stBud").textContent = fmt(S.budget); $("stSpent").textContent = fmt(spent);
+  $("stPend").textContent = S.items.filter(i => i.status === "attente").length;
+  $("bBud").textContent = fmt(S.budget); $("bSp").textContent = fmt(spent);
+  $("bRest").textContent = fmt(rest); $("bRest").className = rest >= 0 ? "pos" : "neg";
+  const by = {}; S.items.filter(i => i.status === "achete").forEach(i => { (by[i.cat] = by[i.cat] || { n: 0, t: 0 }).n++; by[i.cat].t += total(i); });
+  const k = Object.keys(by);
+  $("bCat").innerHTML = k.length ? k.map(c => `<tr><td>${esc(c)}</td><td>${by[c].n}</td><td>${fmt(by[c].t)}</td></tr>`).join("") : `<tr><td colspan="3" class="empty">Aucune dépense enregistrée.</td></tr>`;
+  $("sugg").innerHTML = [...new Set(S.items.map(i => i.name))].map(n => `<option value="${esc(n)}">`).join("");
+  if (document.activeElement !== $("bIn")) $("bIn").value = S.budget || "";
+  renderTables();
+}
 
-        function loadFromLocalStorage() {
-            const saved = localStorage.getItem('nos_besoins_state');
-            if (saved) {
-                try { 
-                    state = JSON.parse(saved); 
-                    // Conversion de l'ancien profil 'Mari' vers 'Homme'
-                    if (state.currentUser === 'Mari') state.currentUser = 'Homme';
-                } catch (e) { console.error(e); }
-            } else {
-                state.requests = [{
-                    id: 'req-1', productName: 'Lait', category: 'Produits alimentaires',
-                    quantity: 2, unitPrice: 750, priority: 'Haute',
-                    desiredDate: new Date().toISOString().split('T')[0], description: '', creator: 'Femme',
-                    status: 'en attente', actualUnitPrice: 0, actualQty: 0, actualTotal: 0, purchaseDate: null
-                }];
-                saveToLocalStorage();
-            }
-            document.getElementById('profileSelect').value = state.currentUser;
-            document.getElementById('monthlyBudgetInput').value = state.monthlyBudget;
-        }
+/* ============ Formulaire ============ */
+function resetForm() {
+  editId = null; photo = "";
+  ["fName", "fPrice", "fDesc"].forEach(i => $(i).value = ""); $("fQty").value = 1; $("fDate").value = today();$("fPrice").value = 0;
+  $("fCat").value = CATS[CATS.length - 1]; $("fPrio").value = "Moyenne"; $("fPhoto").value = "";
+  $("formTitle").textContent = "Ajouter un besoin"; $("saveBtn").textContent = "Enregistrer le besoin"; showPrev();
+}
+function showPrev() { $("prev").style.display = photo ? "block" : "none"; $("rmPhoto").style.display = photo ? "inline-block" : "none"; if (photo) $("prev").src = photo; }
+function clearPhoto() { photo = ""; $("fPhoto").value = ""; showPrev(); }
+// Redimensionne (max 300 px) et compresse en JPEG via <canvas>
+$("fPhoto").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { const img = new Image(); img.onload = () => {
+    const k = Math.min(1, 300 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+    c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    photo = c.toDataURL("image/jpeg", 0.7); showPrev();
+  }; img.src = r.result; };
+  r.readAsDataURL(f);
+});
+function saveItem() {
+  const name = $("fName").value.trim(), qty = +$("fQty").value, price = +$("fPrice").value;
+  if (!name || !(qty > 0) || $("fPrice").value === "" || price < 0) return toast("Renseignez le nom, la quantité et le prix.");
+  const d = { name, qty, price, cat: $("fCat").value, prio: $("fPrio").value.toLowerCase(), desc: $("fDesc").value.trim(), date: $("fDate").value || today(), photo };
+  if (editId) { Object.assign(S.items.find(i => i.id === editId), d, { ts: Date.now() }); toast("Besoin modifié"); }
+  else { S.items.push({ id: "i" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), by: profile, status: "attente", rq: 0, rp: 0, ts: Date.now(), ...d }); toast("Besoin ajouté"); }
+  editId = null; save(); resetForm(); go("list");
+}
+function editItem(id) {
+  const i = S.items.find(x => x.id === id); if (!i) return;
+  editId = id; photo = i.photo || "";
+  $("fName").value = i.name; $("fQty").value = i.qty; $("fPrice").value = i.price; $("fDate").value = i.date;
+  $("fCat").value = i.cat; $("fPrio").value = i.prio[0].toUpperCase() + i.prio.slice(1); $("fDesc").value = i.desc || "";
+  $("formTitle").textContent = "Modifier un besoin"; $("saveBtn").textContent = "Enregistrer les modifications"; showPrev(); go("add");
+}
+function setStatus(id, st) { S.items.find(i => i.id === id).status = st; save(); toast(st === "annule" ? "Besoin annulé" : "Statut mis à jour"); }
+function delItem(id) { if (!confirm("Supprimer ce besoin ?")) return; S.items = S.items.filter(i => i.id !== id); save(); toast("Besoin supprimé"); }
 
-        function saveToLocalStorage() {
-            localStorage.setItem('nos_besoins_state', JSON.stringify(state));
-            if (isFirebaseActive && dbRef) dbRef.set(state);
-        }
+/* ============ Modales ============ */
+const closeM = id => $(id).classList.remove("on");
+function zoom(id) { $("zoomImg").src = S.items.find(i => i.id === id).photo; $("mZoom").classList.add("on"); }
+function openBuy(id, fix) {
+  const i = S.items.find(x => x.id === id); buyId = id;
+  $("mBuyTitle").textContent = fix ? "Corriger l’achat" : "Valider l’achat";
+  $("rQty").value = fix ? i.rq : i.qty; $("rPrice").value = fix ? i.rp : i.price; calcTot(); $("mBuy").classList.add("on");
+}
+function calcTot() { $("rTot").textContent = fmt($("rQty").value * $("rPrice").value); }
+$("rQty").oninput = $("rPrice").oninput = calcTot;
+function confirmBuy() {
+  const q = +$("rQty").value, p = +$("rPrice").value;
+  if (!(q > 0) || $("rPrice").value === "" || p < 0) return toast("Quantité et prix réels requis.");
+  const i = S.items.find(x => x.id === buyId); Object.assign(i, { rq: q, rp: p, status: "achete", ts: Date.now() });
+  closeM("mBuy"); save(); toast("Achat enregistré : " + fmt(q * p));
+}
 
-        function initFirebaseIfAvailable() {
-            const configStr = localStorage.getItem('nos_besoins_firebase_config');
-            if (configStr) {
-                try {
-                    const config = JSON.parse(configStr);
-                    if (!firebase.apps.length) firebase.initializeApp(config);
-                    dbRef = firebase.database().ref('nos_besoins_data');
-                    isFirebaseActive = true;
-                    document.getElementById('syncBanner').innerText = "🟢 Synchronisation en temps réel activée !";
-                    dbRef.on('value', (snapshot) => {
-                        const remote = snapshot.val();
-                        if (remote) {
-                            const user = state.currentUser;
-                            state = remote;
-                            state.currentUser = user;
-                            localStorage.setItem('nos_besoins_state', JSON.stringify(state));
-                            renderAll();
-                        }
-                    });
-                } catch (e) { console.error(e); }
-            }
-        }
+/* ============ Budget ============ */
+function saveBudget() { S.budget = Math.max(0, +$("bIn").value || 0); save(); toast("Budget enregistré"); }
 
-        function setupFirebase() {
-            const input = document.getElementById('firebaseConfigInput').value.trim();
-            if (!input) return;
-            try {
-                JSON.parse(input);
-                localStorage.setItem('nos_besoins_firebase_config', input);
-                showToast('Enregistré ! Rechargement...', 'success');
-                setTimeout(() => location.reload(), 1000);
-            } catch (e) { showToast('JSON invalide', 'error'); }
-        }
+/* ============ Export / Import / Reset ============ */
+function exportData() {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], { type: "application/json" }));
+  a.download = "nos-besoins-" + today() + ".json"; a.click(); toast("Sauvegarde exportée");
+}
+$("imp").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { try { const d = JSON.parse(r.result); if (!Array.isArray(d.items)) throw 0; S = { items: d.items, budget: +d.budget || 0, updated: 0, by: "" }; save(); toast("Sauvegarde importée"); } catch (x) { toast("Fichier JSON invalide."); } };
+  r.readAsText(f); e.target.value = "";
+});
+function resetAll() { if (!confirm("Effacer toutes les données ?")) return; S = { items: [], budget: 0, updated: 0, by: "" }; save(); toast("Données réinitialisées"); }
 
-        function requestNotificationPermission() {
-            if ("Notification" in window) Notification.requestPermission().then(p => { if (p === "granted") showToast('Notifications activées'); });
-        }
+/* ============ Firebase Realtime Database (REST + SSE, sans SDK) ============ */
+const banner = (t, live) => { $("banner").textContent = t; $("banner").classList.toggle("live", !!live); };
+function fbConnect() {
+  const m = $("fbCfg").value.match(/databaseURL["']?\s*:\s*["']([^"']+)/) || $("fbCfg").value.trim().match(/^(https:\/\/\S+)$/);
+  if (!m) return toast("databaseURL introuvable dans la configuration.");
+  fbUrl = m[1].replace(/\/$/, ""); try { localStorage.setItem("nb_fb", fbUrl); } catch (e) {}
+  fbStart(); toast("Synchronisation activée");
+}
+function fbDisconnect() { fbUrl = ""; try { localStorage.removeItem("nb_fb"); } catch (e) {} if (es) es.close(); es = null; banner("📴 Mode local — aucune synchronisation"); toast("Mode local"); }
+function fbStart() {
+  if (es) es.close(); if (!fbUrl) return;
+  banner("🔄 Connexion à Firebase…");
+  es = new EventSource(fbUrl + "/nosbesoins.json");
+  es.onopen = () => banner("🟢 Synchronisation active", true);
+  es.onerror = () => banner("⚠️ Connexion perdue, nouvelle tentative…");
+  const onData = e => {
+    let m; try { m = JSON.parse(e.data); } catch (x) { return; }
+    if (m.path !== "/") return;
+    if (!m.data) { fbPush(); return; }                       // base vide : on y envoie l’état local
+    if ((m.data.updated || 0) <= S.updated) return;          // déjà à jour (ou écho de notre écriture)
+    const old = S.items, r = m.data;
+    S = { items: r.items || [], budget: r.budget || 0, updated: r.updated, by: r.by || "" };
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (x) { toast("⚠️ Mémoire locale pleine."); }
+    renderAll();
+    if (r.by && r.by !== profile) notify(old);
+  };
+  es.addEventListener("put", onData); es.addEventListener("patch", onData);
+}
+function fbPush() {
+  if (!fbUrl) return;
+  fetch(fbUrl + "/nosbesoins.json", { method: "PUT", body: JSON.stringify(S) }).catch(() => banner("⚠️ Envoi impossible (hors ligne ?)"));
+}
 
-        // MODIFICATION 5 : Profil Homme
-        function switchProfile(profile) {
-            state.currentUser = profile;
-            initTheme();
-            saveToLocalStorage();
-            renderAll();
-            showToast(`Mode : ${profile}`);
-        }
+/* ============ Notifications navigateur ============ */
+function askNotif() {
+  if (!("Notification" in window)) return toast("Notifications non prises en charge.");
+  Notification.requestPermission().then(p => toast(p === "granted" ? "Notifications activées" : "Notifications refusées"));
+}
+function notify(old) {
+  const ids = new Map(old.map(i => [i.id, i.ts])), c = S.items.filter(i => ids.get(i.id) !== i.ts);
+  const msg = c.length ? (c.length === 1 ? "« " + c[0].name + " » a été " + (ids.has(c[0].id) ? "modifié" : "ajouté") : c.length + " besoins mis à jour") : "Les données ont changé";
+  toast("🔔 " + who(S.by) + " : " + msg);
+  if ("Notification" in window && Notification.permission === "granted") new Notification("Nos Besoins", { body: who(S.by) + " — " + msg });
+}
 
-        function initTheme() {
-            document.body.setAttribute('data-theme', state.currentUser === 'Homme' ? 'homme' : 'femme');
-        }
+/* ============ PWA : manifeste généré à la volée ============ */
+(function () {
+  const icon = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="40" fill="#db2777"/><path d="M30 90 96 28l66 62v74H30z" fill="#fff"/><path d="M64 108l24 24 44-44" stroke="#db2777" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+  const man = { name: "Nos Besoins", short_name: "Nos Besoins", display: "standalone", lang: "fr", start_url: location.href.split("#")[0], background_color: "#fdf6fa", theme_color: "#db2777", icons: [{ src: icon, sizes: "192x192", type: "image/svg+xml", purpose: "any" }] };
+  const l = document.createElement("link"); l.rel = "manifest"; l.href = URL.createObjectURL(new Blob([JSON.stringify(man)], { type: "application/manifest+json" })); document.head.appendChild(l);
+})();
 
-        function switchView(viewId, btn) {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('nav .nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(viewId).classList.add('active');
-            if (btn) btn.classList.add('active');
-            if (viewId === 'requests') renderRequests();
-            if (viewId === 'dashboard') renderDashboard();
-            if (viewId === 'budget') renderBudgetSummary();
-            if (viewId === 'form-view' && !document.getElementById('editId').value) resetForm();
-        }
-
-        function updateSuggestionsDatalist() {
-            const datalist = document.getElementById('suggestionsList');
-            datalist.innerHTML = '';
-            const all = Array.from(new Set([...DEFAULT_SUGGESTIONS, ...state.requests.map(r => r.productName)]));
-            all.forEach(i => { const opt = document.createElement('option'); opt.value = i; datalist.appendChild(opt); });
-        }
-
-        function handleFormSubmit(e) {
-            e.preventDefault();
-            const editId = document.getElementById('editId').value;
-            const productName = document.getElementById('productName').value.trim();
-            const category = document.getElementById('category').value;
-            const quantity = parseFloat(document.getElementById('quantity').value);
-            const unitPrice = parseFloat(document.getElementById('unitPrice').value);
-            const priority = document.getElementById('priority').value;
-            const desiredDate = document.getElementById('desiredDate').value || new Date().toISOString().split('T')[0];
-            const description = document.getElementById('description').value.trim();
-
-            if (editId) {
-                const req = state.requests.find(r => r.id === editId);
-                if (req) {
-                    req.productName = productName; req.category = category; req.quantity = quantity;
-                    req.unitPrice = unitPrice; req.priority = priority;
-                    req.desiredDate = desiredDate; req.description = description;
-                    showToast('Besoin mis à jour');
-                }
-            } else {
-                state.requests.unshift({
-                    id: 'req-' + Date.now(), productName, category, quantity, unitPrice,
-                    priority, desiredDate, description, creator: state.currentUser,
-                    status: 'en attente', actualUnitPrice: 0, actualQty: 0, actualTotal: 0, purchaseDate: null
-                });
-                showToast('Besoin ajouté');
-            }
-            saveToLocalStorage();
-            resetForm();
-            switchView('requests', document.querySelector('nav button:nth-child(2)'));
-        }
-
-        function editRequest(id) {
-            const req = state.requests.find(r => r.id === id);
-            if (!req) return;
-            if (req.status === 'acheté' && state.currentUser !== 'Homme') {
-                showToast('Impossible de modifier un besoin déjà acheté', 'error'); return;
-            }
-            document.getElementById('editId').value = req.id;
-            document.getElementById('productName').value = req.productName;
-            document.getElementById('category').value = req.category;
-            document.getElementById('quantity').value = req.quantity;
-            document.getElementById('unitPrice').value = req.unitPrice;
-            document.getElementById('priority').value = req.priority;
-            document.getElementById('desiredDate').value = req.desiredDate || new Date().toISOString().split('T')[0];
-            document.getElementById('description').value = req.description || '';
-            document.getElementById('form-title').innerText = 'Modifier le besoin';
-            document.getElementById('submitFormBtn').innerText = 'Mettre à jour';
-            switchView('form-view', document.querySelector('nav button:nth-child(3)'));
-        }
-
-        function resetForm() {
-            document.getElementById('editId').value = '';
-            document.getElementById('needForm').reset();
-            document.getElementById('form-title').innerText = 'Ajouter un nouveau besoin';
-            document.getElementById('submitFormBtn').innerText = 'Enregistrer';
-            document.getElementById('quantity').value = 1;
-            resetFormDateToToday();
-            updateSuggestionsDatalist();
-        }
-
-        function markAsPurchased(id) { openPriceModal(id, true); }
-        function markAsCancelled(id) {
-            const r = state.requests.find(x => x.id === id);
-            if (r) { r.status = 'annulé'; saveToLocalStorage(); renderAll(); showToast('Annulé'); }
-        }
-        function deleteRequest(id) {
-            if (confirm('Supprimer ?')) { state.requests = state.requests.filter(x => x.id !== id); saveToLocalStorage(); renderAll(); showToast('Supprimé'); }
-        }
-
-        function openPriceModal(id, isInit) {
-            const req = state.requests.find(r => r.id === id);
-            if (!req) return;
-            document.getElementById('correctId').value = req.id;
-            document.getElementById('modalProductName').innerText = req.productName;
-            document.getElementById('correctActualQty').value = req.actualQty || req.quantity;
-            document.getElementById('correctActualPrice').value = req.actualUnitPrice || req.unitPrice;
-            calculateModalTotal();
-            document.getElementById('priceModal').classList.add('active');
-        }
-        function closePriceModal() { document.getElementById('priceModal').classList.remove('active'); }
-        function calculateModalTotal() {
-            const q = parseFloat(document.getElementById('correctActualQty').value) || 0;
-            const p = parseFloat(document.getElementById('correctActualPrice').value) || 0;
-            document.getElementById('modalTotalCalculated').innerText = (q * p).toLocaleString('fr-FR') + ' DZD';
-        }
-        function savePriceCorrection(e) {
-            e.preventDefault();
-            const id = document.getElementById('correctId').value;
-            const req = state.requests.find(r => r.id === id);
-            if (!req) return;
-            const q = parseFloat(document.getElementById('correctActualQty').value);
-            const p = parseFloat(document.getElementById('correctActualPrice').value);
-            req.status = 'acheté'; req.actualQty = q; req.actualUnitPrice = p; req.actualTotal = q * p;
-            if (!req.purchaseDate) req.purchaseDate = new Date().toISOString().split('T')[0];
-            saveToLocalStorage(); closePriceModal(); renderAll(); showToast('Achat enregistré');
-        }
-
-        function saveBudget(e) {
-            e.preventDefault();
-            const val = parseFloat(document.getElementById('monthlyBudgetInput').value);
-            if (!isNaN(val)) { state.monthlyBudget = val; saveToLocalStorage(); renderAll(); showToast('Budget mis à jour'); }
-        }
-
-        function renderBudgetSummary() {
-            document.getElementById('summaryBudget').innerText = state.monthlyBudget.toLocaleString('fr-FR');
-            const totalActual = state.requests.filter(r => r.status === 'acheté').reduce((a, b) => a + (b.actualTotal || 0), 0);
-            document.getElementById('summaryActual').innerText = totalActual.toLocaleString('fr-FR');
-            const rem = state.monthlyBudget - totalActual;
-            const remEl = document.getElementById('summaryRemaining');
-            remEl.innerText = rem.toLocaleString('fr-FR') + ' DZD';
-            remEl.style.color = rem < 0 ? 'var(--danger)' : 'var(--success)';
-
-            const summary = {};
-            DEFAULT_CATEGORIES.forEach(c => summary[c] = { count: 0, act: 0 });
-            state.requests.forEach(r => {
-                const c = r.category || 'Autres besoins du foyer';
-                if (!summary[c]) summary[c] = { count: 0, act: 0 };
-                if (r.status === 'acheté') {
-                    summary[c].count++;
-                    summary[c].act += (r.actualTotal || 0);
-                }
-            });
-
-            const tbody = document.getElementById('category-budget-tbody');
-            tbody.innerHTML = '';
-            Object.keys(summary).forEach(c => {
-                const d = summary[c];
-                if (d.act > 0) {
-                    tbody.innerHTML += `<tr><td><strong>${c}</strong></td><td>${d.count}</td><td>${d.act.toLocaleString('fr-FR')} DZD</td></tr>`;
-                }
-            });
-            if (!tbody.innerHTML) tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-light)">Aucun achat réalisé.</td></tr>`;
-        }
-
-        function renderAll() { renderDashboard(); renderRequests(); renderBudgetSummary(); }
-
-        // MODIFICATION 2 : Tableau de bord avec Total Réel et Filtres par colonne
-        function renderDashboard() {
-            document.getElementById('stat-budget').innerText = state.monthlyBudget.toLocaleString('fr-FR') + ' DZD';
-            document.getElementById('stat-actual').innerText = state.requests.filter(r => r.status === 'acheté').reduce((a, b) => a + (b.actualTotal || 0), 0).toLocaleString('fr-FR') + ' DZD';
-            document.getElementById('stat-pending').innerText = state.requests.filter(r => r.status === 'en attente').length;
-
-            const search = (document.getElementById('dashColSearch').value || '').toLowerCase();
-            const category = document.getElementById('dashColCategory').value;
-            const creator = document.getElementById('dashColCreator').value;
-            const priority = document.getElementById('dashColPriority').value;
-            const status = document.getElementById('dashColStatus').value;
-
-            const filtered = state.requests.filter(r => {
-                return (r.productName.toLowerCase().includes(search)) &&
-                       (!category || r.category === category) &&
-                       (!creator || r.creator === creator) &&
-                       (!priority || r.priority === priority) &&
-                       (!status || r.status === status);
-            });
-
-            const tbody = document.getElementById('recent-tbody');
-            tbody.innerHTML = filtered.length ? '' : `<tr><td colspan="6" style="text-align: center; color: var(--text-light);">Aucun produit</td></tr>`;
-            filtered.forEach(r => {
-                const realTotalDisplay = r.status === 'acheté' ? `${(r.actualTotal || 0).toLocaleString('fr-FR')} DZD` : '-';
-                tbody.innerHTML += `<tr>
-                    <td><strong>${r.productName}</strong></td>
-                    <td><span class="badge badge-category">${r.category}</span></td>
-                    <td><span class="badge badge-creator">${r.creator}</span></td>
-                    <td><span class="badge badge-priority-${r.priority.toLowerCase()}">${r.priority}</span></td>
-                    <td><strong>${realTotalDisplay}</strong></td>
-                    <td><span class="badge badge-${r.status === 'acheté' ? 'purchased' : (r.status === 'annulé' ? 'cancelled' : 'pending')}">${r.status}</span></td>
-                </tr>`;
-            });
-        }
-
-        // MODIFICATION 3 : Liste des demandes avec Prix/Total Réel et Filtres par colonne
-        function renderRequests() {
-            const search = (document.getElementById('reqColSearch').value || '').toLowerCase();
-            const category = document.getElementById('reqColCategory').value;
-            const creator = document.getElementById('reqColCreator').value;
-            const status = document.getElementById('reqColStatus').value;
-
-            const filtered = state.requests.filter(r => {
-                return (r.productName.toLowerCase().includes(search)) &&
-                       (!category || r.category === category) &&
-                       (!creator || r.creator === creator) &&
-                       (!status || r.status === status);
-            });
-
-            const tbody = document.getElementById('requests-tbody');
-            tbody.innerHTML = filtered.length ? '' : `<tr><td colspan="7" style="text-align: center; color: var(--text-light);">Aucune demande</td></tr>`;
-            
-            filtered.forEach(r => {
-                const isPurchased = r.status === 'acheté';
-                const qtyDisplay = isPurchased ? (r.actualQty || r.quantity) : r.quantity;
-                const unitPriceDisplay = isPurchased ? (r.actualUnitPrice || r.unitPrice) : r.unitPrice;
-                const realTotalDisplay = isPurchased ? `${(r.actualTotal || 0).toLocaleString('fr-FR')} DZD` : 'En attente';
-
-                let actions = `<div style="display:flex; gap:0.5rem; flex-wrap:wrap;">`;
-                if (r.status === 'en attente') {
-                    actions += `<button class="btn btn-sm btn-success" onclick="markAsPurchased('${r.id}')">✓ Acheté</button>`;
-                    actions += `<button class="btn btn-sm btn-secondary" onclick="editRequest('${r.id}')">Modifier</button>`;
-                    actions += `<button class="btn btn-sm btn-danger" onclick="markAsCancelled('${r.id}')">Annuler</button>`;
-                } else if (r.status === 'acheté') {
-                    if (state.currentUser === 'Homme') actions += `<button class="btn btn-sm" onclick="openPriceModal('${r.id}', false)">Corriger</button>`;
-                    actions += `<span style="font-size:0.85rem; color:var(--text-light)">Verrouillé</span>`;
-                } else {
-                    actions += `<button class="btn btn-sm btn-danger" onclick="deleteRequest('${r.id}')">Supprimer</button>`;
-                }
-                actions += `</div>`;
-
-                tbody.innerHTML += `<tr>
-                    <td><strong>${r.productName}</strong><br><small style="color:var(--text-light)">${r.description || ''}</small></td>
-                    <td><span class="badge badge-category">${r.category}</span></td>
-                    <td>Qté: ${qtyDisplay} | ${unitPriceDisplay.toLocaleString('fr-FR')} DZD</td>
-                    <td><strong style="color: ${isPurchased ? 'var(--success)' : 'inherit'};">${realTotalDisplay}</strong></td>
-                    <td><span class="badge badge-creator">${r.creator}</span><br><small>${r.desiredDate || ''}</small></td>
-                    <td><span class="badge badge-${isPurchased ? 'purchased' : (r.status === 'annulé' ? 'cancelled' : 'pending')}">${r.status}</span></td>
-                    <td>${actions}</td>
-                </tr>`;
-            });
-        }
-
-        function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
-            const dl = document.createElement('a'); dl.setAttribute("href", dataStr);
-            dl.setAttribute("download", "nos_besoins_backup.json"); document.body.appendChild(dl); dl.click(); dl.remove();
-        }
-        function confirmResetData() {
-            if (confirm('Réinitialiser toutes les données ?')) { localStorage.clear(); location.reload(); }
-        }
-        function showToast(msg, type='success') {
-            const c = document.getElementById('toast-container');
-            const t = document.createElement('div'); t.className = `toast ${type}`; t.innerText = msg;
-            c.appendChild(t); setTimeout(() => t.remove(), 3000);
-        }
-    </script>
+/* ============ Initialisation ============ */
+(function init() {
+  $("tabs").innerHTML = TABS.map(t => `<button data-t="${t[0]}" onclick="go('${t[0]}')">${t[1]}</button>`).join("");
+  $("fCat").innerHTML = CATS.map(c => `<option>${c}</option>`).join("");
+  buildHeads(); load(); setProfile(profile); resetForm(); go("dash");
+  if (fbUrl) { $("fbCfg").value = JSON.stringify({ databaseURL: fbUrl }, null, 2); fbStart(); }
+})();
+</script>
 </body>
 </html>
